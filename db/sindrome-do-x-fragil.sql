@@ -1,2 +1,2 @@
-create database sindromedoxfragil;
-use sindromedoxfragil;
+CREATE DATABASE sindromedoxfragil;
+USE sindromedoxfragil;
