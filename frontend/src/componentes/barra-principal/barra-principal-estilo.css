@@ -1,0 +1,19 @@
+@import "../../variaveis.css";
+.barra-principal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--cor-quaternaria);
+    padding: 10px 20px;
+    color: var(--cor-texto);
+}
+.botoes-barra {
+    padding: 8px;
+    gap: 15px;
+    border-radius: 12px;
+    height: 30px;
+    width: 100px;
+    margin: 8px;
+    background-color: var(--cor-terciaria);
+    border-color: var(--cor-fundo);
+}
