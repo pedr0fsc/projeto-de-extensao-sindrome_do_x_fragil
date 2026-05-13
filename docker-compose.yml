@@ -1,0 +1,30 @@
+services:
+  # This is your Python + React application
+  api:
+    build: .
+    # Maps the port from your .env (3001) to the container
+    ports:
+      - "${PORT}:${PORT}"
+    depends_on:
+      - database
+    # This tells Docker to load variables from your .env file
+    env_file:
+      - .env
+    environment:
+      # We tell the backend to look for the 'database' service on the network
+      - DB_HOST=database
+
+  # This is your MySQL Database
+  database:
+    image: mysql:8.0
+    # Use the same .env file for the DB container
+    env_file:
+      - .env
+    volumes:
+      # Initializes your DB using your .sql file
+      - ./db/your_file.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persists your data so it isn't lost on restart
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
