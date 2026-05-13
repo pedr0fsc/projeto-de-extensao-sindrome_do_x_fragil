@@ -1,19 +1,30 @@
 services:
-  db:
-    image: mysql:8.0
-    container_name: xfragil_mysql_db
-    restart: always
-    # O Docker lê o arquivo .env automaticamente e substitui os valores abaixo
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  # This is your Python + React application
+  api:
+    build: .
+    # Maps the port from your .env (3001) to the container
     ports:
-      - "3306:3306"
+      - "${PORT}:${PORT}"
+    depends_on:
+      - database
+    # This tells Docker to load variables from your .env file
+    env_file:
+      - .env
+    environment:
+      # We tell the backend to look for the 'database' service on the network
+      - DB_HOST=database
+
+  # This is your MySQL Database
+  database:
+    image: mysql:8.0
+    # Use the same .env file for the DB container
+    env_file:
+      - .env
     volumes:
-      # Isso garante que, se você desligar o PC, os dados do banco não sumam
-      - mysql_data:/var/lib/mysql
+      # Initializes your DB using your .sql file
+      - ./db/your_file.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persists your data so it isn't lost on restart
+      - db_data:/var/lib/mysql
 
 volumes:
-  mysql_data:
+  db_data:
