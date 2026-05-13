@@ -16,13 +16,9 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 ### **Frontend (Interface)**
 - **React.js + Vite:** Framework de alta performance para SPA (Single Page Application).
 - **TypeScript:** Tipagem estática para maior robustez e manutenibilidade.
-- **Tailwind CSS:** Estilização baseada em utilitários para interface responsiva.
-- **Axios:** Consumo de APIs RESTful.
 
 ### **Backend (Servidor)**
-- **Node.js + Express:** Runtime e framework para a lógica de negócio.
-- **Prisma ORM:** Mapeamento de banco de dados com segurança de tipos.
-- **JWT (JSON Web Token):** Autenticação segura entre Front e Back.
+- **Python** Um único arquivo Python respon´savel pela conexão do banco de dados com o frontend da aplicação.
 
 ### **Infraestrutura & Banco**
 - **MySQL 8.0:** Banco de dados relacional para persistência de dados.
@@ -34,11 +30,118 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 ## 📂 Estrutura do Repositório
 
 ```text
-projeto-x-fragil/
-├── frontend/             # Interface React (Vite)
-├── backend/              # API Express (Node.js)
-│   └── prisma/           # Schema e Migrations do Banco
-├── docker-compose.yml    # Orquestração do MySQL via Docker
-├── .env                  # Variáveis de ambiente (Senhas/URLs)
-├── .gitignore            # Regras de exclusão do Git (Centralizado)
-└── README.md             # Documentação oficial
+projeto-de-extensao-sindrome_do_x_fragil/
+├── db/sindrome-do-x-fragil.sql     # Arquivo de estruturação do Database SQL
+├── frontend/                       # Interface React (Vite)
+├── docker-compose.yml              # Orquestração do MySQL via Docker
+├── Dockerfile                      # Build dos conteineres Docker (1. React e 2. Python e db)
+├── main.py                         # Arquivo .py de backend
+├── .env                            # Variáveis de ambiente (Senhas/URLs)
+├── .env.example                    # Template das variáveis de ambiente para devs
+├── .gitignore                      # Regras de exclusão do Git (Centralizado)
+└── README.md                       # Documentação oficial
+```
+
+---
+
+## 🚀 Guia de Contribuição
+
+Para manter a integridade do código e a organização do projeto, siga os passos abaixo para contribuir:
+### 1. Preparando o Ambiente
+
+Clone o repositório:
+Bash
+
+```
+git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
+cd projeto-de-extensao-sindrome_do_x_fragil
+```
+
+Configure as credenciais:
+Copie o arquivo de exemplo e preencha com suas senhas locais:
+Bash
+
+```
+cp .env.example .env
+```
+
+Instale as dependências do Frontend:
+Bash
+
+```
+cd frontend
+npm install
+cd ..
+```
+
+### 2. Fluxo de Desenvolvimento (Git Flow)
+
+Crie uma Branch: Nunca trabalhe diretamente na main. Use nomes descritivos:
+
+```
+git checkout -b feature/nome-da-sua-alteracao
+```
+
+ou
+
+```
+git checkout -b fix/correcao-de-bug
+```
+
+Commit suas alterações! Seja claro nas mensagens:
+
+```
+git add .
+git commit -m "feat: adiciona lógica de cálculo do score ponderado"
+```
+Suba para o GitHub:
+
+```
+git push origin feature/nome-da-sua-alteracao
+```
+
+### Pull Request (PR): 
+Abra um PR no GitHub. Outro desenvolvedor deve revisar seu código antes do Merge para a branch principal.
+
+---
+
+## 🐳 Como Buildar e Rodar
+Modo de Desenvolvimento (Local)
+
+Para rodar tudo com um único comando usando Docker:
+
+```
+docker-compose up --build
+```
+
+### Frontend/Backend: 
+Disponível em http://localhost:3001 (ou a porta definida no seu .env).
+
+### Banco de Dados: 
+O MySQL subirá automaticamente e executará o script em db/sindrome-do-x-fragil.sql.
+
+### Deploy em Produção (Servidor)
+
+Ao hospedar em plataformas como Railway ou Render:
+
+- Conecte seu repositório GitHub à plataforma.
+
+- Configure as Environment Variables no dashboard da plataforma (copie os campos do seu .env).
+
+- A plataforma detectará o Dockerfile na raiz e iniciará o build multi-stage automaticamente.
+
+## 🔍 Detalhes dos Componentes e Conexões
+
+**Dockerfile (Multi-Stage)**: Otimiza o servidor. No estágio 1, o Node.js compila o React para arquivos estáticos (dist). No estágio 2, o Python assume e serve esses arquivos, eliminando a necessidade de rodar o Node em produção.
+
+**main.py**: Atua como a "ponte". Ele utiliza bibliotecas como Flask ou FastAPI para servir a interface React e expor endpoints de API que consultam o MySQL.
+
+**docker-compose.yml**: Orquestra a rede interna. O serviço api consegue encontrar o serviço database usando apenas o nome host: database, graças à rede interna do Docker.
+
+**.env**: Centraliza a segurança. Nunca suba este arquivo. Ele garante que sua chave secreta JWT e senhas de banco sejam diferentes entre seu PC e o servidor de produção.
+
+## 📜 Licença
+
+Este projeto está sob a licença MIT. Sinta-se livre para usar, estudar e modificar, desde que mantenha os créditos aos autores originais.
+
+Desenvolvido com 🧬 para o avanço do diagnóstico genético.
