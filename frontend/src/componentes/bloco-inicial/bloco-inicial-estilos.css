@@ -1,0 +1,19 @@
+@import "../../variaveis.css";
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Nunito", sans-serif;
+}
+.bloco-inicial {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 40px;
+    background-color: var(--cor-fundo);
+}
+.ImagemIlustrativa {
+    height: 400px;
+    width: 600px;
+    border-radius: 40px;
+    margin: 20px;
+}
