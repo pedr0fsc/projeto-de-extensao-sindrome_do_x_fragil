@@ -22,7 +22,7 @@ services:
       - .env
     volumes:
       # Initializes your DB using your .sql file
-      - ./db/your_file.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/sindrome-do-x-fragil.sql:/docker-entrypoint-initdb.d/init.sql
       # Persists your data so it isn't lost on restart
       - db_data:/var/lib/mysql
 
