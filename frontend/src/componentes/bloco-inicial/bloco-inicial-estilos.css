@@ -13,7 +13,21 @@
 }
 .ImagemIlustrativa {
     height: 400px;
-    width: 600px;
+    width: 800px;
     border-radius: 40px;
     margin: 20px;
+}
+.texto {
+    max-width: 500px;
+    margin: 20px;
+}
+.texto h1 {
+    font-size: 48px;
+    color: var(--cor-texto);
+    margin-bottom: 20px;
+}
+.texto p {
+    font-size: 18px;
+    color: var(--cor-texto);
+    margin-bottom: 30px;
 }
