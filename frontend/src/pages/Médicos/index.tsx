@@ -1,5 +1,10 @@
 import './pagina-medicos.css'
+import { ModalCadastrarPaciente } from '../../componentes/Modal-pacientes'
+import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
+import { useState } from 'react'
+
 export function PaginaMedicos() {
+    const [modalAberto, setModalAberto] = useState(false)
     return (
         <>
         <div className='barra-principal'>
@@ -40,6 +45,22 @@ export function PaginaMedicos() {
                                 <button>Excluir</button>
                             </p>
                         </div>
+                    </div>
+                </section>
+                <section>
+                    <div>
+                        <button onClick={() => setModalAberto(true)}>
+                            + Inserir Paciente
+                        </button>
+                        {modalAberto && (
+                        <ModalCadastrarPaciente onFechar={() => setModalAberto(false)} />
+                        )}
+                        <button onClick={() => setModalAberto(true)}>
+                            + Consultar paciente
+                        </button>
+                        {modalAberto && (
+                        <ModalConsultarPacientes onFechar={() => setModalAberto(false)} />
+                        )}
                     </div>
                 </section>
             </div>

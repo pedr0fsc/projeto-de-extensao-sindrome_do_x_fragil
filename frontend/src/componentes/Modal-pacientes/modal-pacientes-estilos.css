@@ -1,0 +1,68 @@
+.overlay {
+  position: fixed;
+  inset: 0;                       /* cobre a tela toda */
+  background: rgba(0, 0, 0, 0.4); /* fundo escurecido */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.botao-fechar {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.modal-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-corpo input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.modal-rodape {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+}
+
+.botao-concluir {
+  background: #a8b89a;
+  color: white;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.botao-cancelar {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+}
