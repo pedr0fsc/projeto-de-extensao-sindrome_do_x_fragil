@@ -3,18 +3,21 @@ import { ModalCadastrarPaciente } from '../../componentes/Modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { useState } from 'react'
 
+
 export function PaginaMedicos() {
-    const [modalAberto, setModalAberto] = useState(false)
+    const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
+    const [modalConsultarAberto, setModalConsultarAberto] = useState(false)
+
     return (
         <>
         <div className='barra-principal'>
-        <div className='logo'>
-          <h2>Logo do projeto</h2>
+            <div className='logo'>
+                <h2>Logo do projeto</h2>
+            </div>
+            <div className='informações'>
+                <p>Olá, médico!</p>
+            </div>
         </div>
-        <div className='informações'>
-          <p>Olá, médico!</p> # Exemplo de informação personalizada para o médico
-        </div>
-      </div>
         <div className='identificacao'>
             <h1>Bem-vindo à página dos médicos!</h1>
             <p>Aqui você pode acessar informações e recursos relacionados à Síndrome do X Frágil.</p>
@@ -29,7 +32,7 @@ export function PaginaMedicos() {
                             <h3>Idade</h3>
                             <h3>Gênero</h3>
                             <h3>Data de nascimento</h3>
-                            <h3>Data da última consulta </h3>
+                            <h3>Data da última consulta</h3>
                             <h3>Ações</h3>
                         </div>
                     </div>
@@ -49,19 +52,20 @@ export function PaginaMedicos() {
                 </section>
                 <section>
                     <div>
-                        <button onClick={() => setModalAberto(true)}>
+                        <button onClick={() => setModalCadastrarAberto(true)}>
                             + Inserir Paciente
                         </button>
-                        {modalAberto && (
-                        <ModalCadastrarPaciente onFechar={() => setModalAberto(false)} />
-                        )}
-                        <button onClick={() => setModalAberto(true)}>
-                            + Consultar paciente
+                        <button onClick={() => setModalConsultarAberto(true)}>
+                            + Consultar Paciente
                         </button>
-                        {modalAberto && (
-                        <ModalConsultarPacientes onFechar={() => setModalAberto(false)} />
-                        )}
                     </div>
+
+                    {modalCadastrarAberto && (
+                        <ModalCadastrarPaciente onFechar={() => setModalCadastrarAberto(false)} />
+                    )}
+                    {modalConsultarAberto && (
+                        <ModalConsultarPacientes onFechar={() => setModalConsultarAberto(false)} />
+                    )}
                 </section>
             </div>
         </div>
