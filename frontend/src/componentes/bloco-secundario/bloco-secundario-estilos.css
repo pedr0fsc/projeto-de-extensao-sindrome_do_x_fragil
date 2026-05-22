@@ -1,0 +1,24 @@
+@import "../../variaveis.css";
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Nunito", sans-serif;
+}
+.bloco-secundario {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px;
+    background-color: var(--cor-secundaria);
+    height: 400px;
+    width: 600px;
+}
+.titulo-sobre {
+    color: var(--cor-texto);
+    margin-bottom: 20px;
+}
+.titulo-sobre h1 {
+    font-size: 40px;
+    color: var(--cor-texto);
+}

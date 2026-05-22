@@ -1,0 +1,7 @@
+@import "../../variaveis.css";
+.footer {
+    background-color: var(--cor-quaternaria);
+    padding: 12px;
+    text-align: center;
+    font-family: "Nunito", sans-serif;
+}
