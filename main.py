@@ -62,7 +62,7 @@ def enviar_email(destino, nome, score, recomendacao):
         msg['To'] = destino
         corpo = f"""Paciente: {nome}
 Score: {score:.3f}
-Recomendação: {recomendacao}
+Recomendação:
 
 {recomendacao}
 
