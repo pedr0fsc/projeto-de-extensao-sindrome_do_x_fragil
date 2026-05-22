@@ -3,6 +3,8 @@ import smtplib
 import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from mangum import Mangum
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -11,8 +13,6 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from datetime import date, datetime
 from hashlib import md5
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
 from io import BytesIO
 
 app = FastAPI()
