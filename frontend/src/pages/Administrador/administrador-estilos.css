@@ -1,13 +1,13 @@
 @import "../../variaveis.css";
 
-.medico-layout {
+.admin-layout {
     display: flex;
     min-height: 100vh;
     font-family: "Nunito", sans-serif;
 }
 
 /* Sidebar */
-.medico-sidebar {
+.admin-sidebar {
     width: 140px;
     background-color: var(--cor-quaternaria);
     display: flex;
@@ -65,7 +65,7 @@
 }
 
 /* Main area */
-.medico-main {
+.admin-main {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -73,8 +73,7 @@
     min-width: 0;
 }
 
-/* Topbar */
-.medico-topbar {
+.admin-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -82,7 +81,7 @@
     border-bottom: 1px solid var(--cor-quaternaria);
 }
 
-.medico-search {
+.admin-search {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -92,13 +91,13 @@
     width: 300px;
 }
 
-.medico-search img {
+.admin-search img {
     width: 18px;
     height: 18px;
     opacity: 0.5;
 }
 
-.medico-search input {
+.admin-search input {
     border: none;
     background: none;
     outline: none;
@@ -108,7 +107,7 @@
     color: var(--cor-texto);
 }
 
-.medico-perfil {
+.admin-perfil {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -122,37 +121,38 @@
     color: var(--cor-texto);
 }
 
-.medico-perfil img {
+.admin-perfil img {
     width: 22px;
     height: 22px;
 }
 
 /* Content */
-.medico-conteudo {
+.admin-conteudo {
     padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 18px;
 }
 
-.medico-filtros-header {
+.admin-secao {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.admin-filtros-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.medico-filtros-header h2 {
+.admin-filtros-header h2 {
     font-size: 20px;
     font-weight: 600;
     color: var(--cor-texto);
 }
 
-.medico-acoes-header {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-acao-header {
+.btn-inserir {
     background-color: var(--cor-quaternaria);
     border: none;
     border-radius: 8px;
@@ -164,21 +164,11 @@
     transition: background-color 0.2s;
 }
 
-.btn-acao-header:hover {
+.btn-inserir:hover {
     background-color: var(--cor-terciaria);
 }
 
-.btn-acao-primario {
-    background-color: var(--cor-terciaria);
-}
-
-.btn-acao-primario:hover {
-    background-color: var(--cor-secundaria);
-    color: white;
-}
-
-/* Filtros */
-.medico-filtros {
+.admin-filtros {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
@@ -201,25 +191,25 @@
 }
 
 /* Table */
-.medico-tabela-container {
+.admin-tabela-container {
     background-color: var(--cor-quaternaria);
     border-radius: 16px;
     padding: 20px 24px;
 }
 
-.medico-tabela-container h3 {
+.admin-tabela-container h3 {
     margin-bottom: 16px;
     font-size: 17px;
     font-weight: 600;
     color: var(--cor-texto);
 }
 
-.medico-tabela {
+.admin-tabela {
     width: 100%;
     border-collapse: collapse;
 }
 
-.medico-tabela th {
+.admin-tabela th {
     text-align: left;
     padding: 10px 12px;
     font-size: 14px;
@@ -228,14 +218,14 @@
     border-bottom: 2px solid rgba(44, 105, 117, 0.15);
 }
 
-.medico-tabela td {
+.admin-tabela td {
     padding: 11px 12px;
     font-size: 14px;
     color: var(--cor-texto);
     border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-.medico-tabela tr:last-child td {
+.admin-tabela tr:last-child td {
     border-bottom: none;
 }
 
@@ -245,7 +235,7 @@
     align-items: center;
 }
 
-.btn-tabela {
+.btn-acao {
     background: none;
     border: none;
     cursor: pointer;
@@ -256,17 +246,17 @@
     transition: background-color 0.15s;
 }
 
-.btn-tabela img {
+.btn-acao img {
     width: 18px;
     height: 18px;
     opacity: 0.7;
 }
 
-.btn-tabela:hover {
+.btn-acao:hover {
     background-color: rgba(44, 105, 117, 0.1);
 }
 
-.btn-tabela:hover img {
+.btn-acao:hover img {
     opacity: 1;
 }
 
@@ -330,26 +320,17 @@
     font-weight: 600;
 }
 
-.status-concluida {
+.status-ativo {
     background-color: rgba(104, 178, 160, 0.2);
     color: var(--cor-primaria);
 }
 
-/* PDF button */
-.btn-pdf {
-    background-color: var(--cor-secundaria);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 14px;
-    cursor: pointer;
-    font-family: "Nunito", sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    transition: background-color 0.2s;
-    white-space: nowrap;
+.status-inativo {
+    background-color: rgba(200, 80, 80, 0.12);
+    color: #c0392b;
 }
 
-.btn-pdf:hover {
-    background-color: var(--cor-primaria);
+/* Dashboard highlight card */
+.dashboard-card-destaque {
+    border-left: 4px solid var(--cor-primaria);
 }

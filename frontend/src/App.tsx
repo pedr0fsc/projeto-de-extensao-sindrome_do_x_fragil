@@ -1,14 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useState } from 'react'
 import Home from '../src/pages/Home'
 import LoginMedicos from '../src/pages/Login Médicos'
 import PaginaMedicos from '../src/pages/Médicos'
+import PaginaAdministrador from '../src/pages/Administrador'
+import NaoEncontrado from '../src/pages/NaoEncontrado'
 
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <BrowserRouter>
       <Routes>
@@ -16,6 +15,8 @@ function App() {
         <Route path="/sobre" element={<Home />} />
         <Route path="/login-medicos" element={<LoginMedicos />} />
         <Route path="/pagina-medicos" element={<PaginaMedicos />} />
+        <Route path="/pagina-administrador" element={<PaginaAdministrador />} />
+        <Route path="*" element={<NaoEncontrado />} />
       </Routes>
     </BrowserRouter>
   )

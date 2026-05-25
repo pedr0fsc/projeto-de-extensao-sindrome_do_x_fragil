@@ -1,19 +1,47 @@
 @import "../../variaveis.css";
+
 .barra-principal {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background-color: var(--cor-quaternaria);
-    padding: 10px 20px;
+    padding: 10px 24px;
+    font-family: "Nunito", sans-serif;
     color: var(--cor-texto);
 }
-.botoes-barra {
-    padding: 8px;
-    gap: 15px;
-    border-radius: 12px;
-    height: 30px;
-    width: 100px;
-    margin: 8px;
+
+.logo h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.botoes-barra-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.botao-barra {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 20px;
     background-color: var(--cor-terciaria);
-    border-color: var(--cor-fundo);
+    border: 2px solid var(--cor-fundo);
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    transition: background-color 0.2s;
+}
+
+.botao-barra img {
+    width: 18px;
+    height: 18px;
+}
+
+.botao-barra:hover {
+    background-color: var(--cor-secundaria);
+    color: white;
 }

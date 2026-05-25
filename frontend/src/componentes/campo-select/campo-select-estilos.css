@@ -1,0 +1,33 @@
+@import "../../variaveis.css";
+
+.campo-select-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.campo-label {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.campo-select {
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    background-color: var(--cor-fundo);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.campo-select:focus {
+    border-color: var(--cor-secundaria);
+}
