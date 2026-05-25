@@ -1,0 +1,586 @@
+@import "../../variaveis.css";
+
+/* ── Overlay e Modal Base ───────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+
+.modal {
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-medio {
+    max-width: 560px;
+}
+
+.modal-largo {
+    max-width: 740px;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.modal-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.botao-fechar {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    opacity: 0.45;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.botao-fechar:hover {
+    opacity: 1;
+}
+
+.botao-voltar {
+    background: none;
+    border: none;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cor-secundaria);
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.botao-voltar:hover {
+    color: var(--cor-primaria);
+}
+
+/* ── Etapa: Busca ────────────────────────────────────────────── */
+
+.modal-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.consulta-label {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.consulta-input {
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.consulta-input:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.botao-buscar {
+    background-color: var(--cor-secundaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.botao-buscar:hover {
+    background-color: var(--cor-primaria);
+}
+
+.resultado-nao-encontrado {
+    background-color: #fff3f3;
+    border: 1px solid #f5c6c6;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.resultado-nao-encontrado p {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: #c0392b;
+}
+
+.botao-cadastrar-novo {
+    background-color: var(--cor-terciaria);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    transition: background-color 0.2s;
+}
+
+.botao-cadastrar-novo:hover {
+    background-color: var(--cor-secundaria);
+    color: white;
+}
+
+/* ── Etapa: Perfil ───────────────────────────────────────────── */
+
+.perfil-paciente {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background-color: var(--cor-quaternaria);
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+
+.perfil-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: var(--cor-secundaria);
+    color: white;
+    font-family: "Nunito", sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.perfil-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.perfil-nome {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0;
+}
+
+.perfil-detalhes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.7;
+    align-items: center;
+}
+
+.perfil-sep {
+    opacity: 0.4;
+}
+
+.perfil-ultima-consulta {
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    color: var(--cor-secundaria);
+    font-weight: 600;
+}
+
+/* ── Histórico ───────────────────────────────────────────────── */
+
+.historico-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.historico-header h3 {
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0;
+}
+
+.botao-novo-prontuario {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.botao-novo-prontuario:hover {
+    background-color: var(--cor-secundaria);
+}
+
+.historico-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.historico-item {
+    background-color: var(--cor-quaternaria);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.historico-item-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.historico-item-data {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.historico-data {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.historico-medico {
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    color: var(--cor-texto);
+    opacity: 0.6;
+}
+
+.historico-item-sintomas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sintoma-tag {
+    background-color: rgba(44, 105, 117, 0.12);
+    color: var(--cor-primaria);
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.historico-obs {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.7;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Etapa: Novo Prontuário ──────────────────────────────────── */
+
+.prontuario-paciente-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background-color: var(--cor-quaternaria);
+    border-radius: 10px;
+    padding: 12px 16px;
+}
+
+.prontuario-paciente-nome {
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.prontuario-paciente-info {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.6;
+}
+
+.prontuario-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prontuario-sintomas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prontuario-sintomas-sub {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.55;
+    margin: 0;
+}
+
+.sintomas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.sintoma-opcao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--cor-quaternaria);
+    border-radius: 8px;
+    padding: 9px 12px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    transition: background-color 0.15s;
+    user-select: none;
+}
+
+.sintoma-opcao:hover {
+    background-color: var(--cor-terciaria);
+}
+
+.sintoma-opcao-marcado {
+    background-color: rgba(44, 105, 117, 0.14);
+    color: var(--cor-primaria);
+    font-weight: 600;
+}
+
+.sintoma-check {
+    accent-color: var(--cor-primaria);
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.prontuario-textarea {
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.prontuario-textarea:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.prontuario-rodape {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.botao-cancelar {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.botao-cancelar:hover {
+    background-color: var(--cor-terciaria);
+}
+
+.botao-salvar {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background-color 0.2s;
+}
+
+.botao-salvar:hover:not(:disabled) {
+    background-color: var(--cor-secundaria);
+}
+
+.botao-salvar:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.prontuario-campos-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.prontuario-campo-hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--cor-secundaria);
+    background-color: rgba(104, 178, 160, 0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 4px;
+}
+
+.prontuario-textarea-grande {
+    min-height: 110px;
+}
+
+/* ── Confirmação de Prontuário Salvo ─────────────────────────── */
+
+.prontuario-salvo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.prontuario-salvo-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--cor-secundaria);
+    color: white;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prontuario-salvo h3 {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0;
+}
+
+.prontuario-salvo p {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    opacity: 0.65;
+    margin: 0;
+}
+
+.prontuario-salvo-acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.botao-voltar-perfil {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.botao-voltar-perfil:hover {
+    background-color: var(--cor-terciaria);
+}
+
+/* ── Botão PDF ───────────────────────────────────────────────── */
+
+.botao-gerar-pdf {
+    background-color: var(--cor-secundaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.botao-gerar-pdf:hover {
+    background-color: var(--cor-primaria);
+}

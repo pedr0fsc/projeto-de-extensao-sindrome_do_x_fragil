@@ -1,24 +1,50 @@
 @import "../../variaveis.css";
-* {
-    margin: 0;
-    padding: 0;
-    font-family: "Nunito", sans-serif;
-}
-.bloco-secundario {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+.bloco-sobre {
+    background-color: var(--cor-terciaria);
+    border-radius: 24px;
+    padding: 48px 60px;
+    margin: 40px;
     text-align: center;
-    padding: 40px;
-    background-color: var(--cor-secundaria);
-    height: 400px;
-    width: 600px;
 }
+
 .titulo-sobre {
-    color: var(--cor-texto);
-    margin-bottom: 20px;
+    margin-bottom: 32px;
 }
-.titulo-sobre h1 {
-    font-size: 40px;
+
+.titulo-sobre h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 36px;
+    font-weight: 600;
     color: var(--cor-texto);
+}
+
+.colunas-sobre {
+    display: flex;
+    gap: 48px;
+    text-align: left;
+}
+
+.coluna-sobre {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-left: 3px solid rgba(44, 105, 117, 0.25);
+    padding-left: 24px;
+}
+
+.coluna-sobre h3 {
+    font-family: "Nunito", sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.coluna-sobre p {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    color: var(--cor-texto);
+    line-height: 1.7;
+    opacity: 0.85;
 }

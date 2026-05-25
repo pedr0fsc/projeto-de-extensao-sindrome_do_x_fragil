@@ -1,68 +1,351 @@
+@import "../../variaveis.css";
+
+/* ── Overlay ── */
 .overlay {
-  position: fixed;
-  inset: 0;                       /* cobre a tela toda */
-  background: rgba(0, 0, 0, 0.4); /* fundo escurecido */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
 }
 
-.modal {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
-  width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* ── Modal container ── */
+.modal-ms {
+    background: white;
+    border-radius: 16px;
+    width: 560px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* ── Topo ── */
+.ms-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 32px 0;
 }
 
-.botao-fechar {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
+.ms-topo h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cor-texto);
 }
 
-.modal-corpo {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.ms-btn-fechar {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    opacity: 0.4;
+    line-height: 1;
+    padding: 4px;
+    transition: opacity 0.15s;
 }
 
-.modal-corpo input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+.ms-btn-fechar:hover {
+    opacity: 1;
 }
 
-.modal-rodape {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 16px;
+/* ── Step indicator ── */
+.ms-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 32px 20px;
 }
 
-.botao-concluir {
-  background: #a8b89a;
-  color: white;
-  border: none;
-  padding: 10px 28px;
-  border-radius: 8px;
-  cursor: pointer;
+.ms-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.botao-cancelar {
-  background: white;
-  border: 1px solid #ccc;
-  padding: 10px 28px;
-  border-radius: 8px;
-  cursor: pointer;
+.ms-circulo {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid #d5d5d5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #c0c0c0;
+    background: white;
+    transition: all 0.25s;
+}
+
+.ms-ativo {
+    background: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+    color: white;
+}
+
+.ms-concluido {
+    background: var(--cor-secundaria);
+    border-color: var(--cor-secundaria);
+    color: white;
+}
+
+.ms-step-nome {
+    font-family: "Nunito", sans-serif;
+    font-size: 11px;
+    color: #c0c0c0;
+    white-space: nowrap;
+    transition: color 0.25s;
+}
+
+.ms-step-nome-ativo {
+    color: var(--cor-texto);
+    font-weight: 600;
+}
+
+.ms-conector {
+    flex: 1;
+    height: 2px;
+    background: #e4e4e4;
+    margin-top: 16px;
+    min-width: 48px;
+    transition: background 0.25s;
+}
+
+.ms-conector-ativo {
+    background: var(--cor-secundaria);
+}
+
+/* ── Corpo rolável ── */
+.ms-corpo {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 32px 16px;
+}
+
+.ms-secao {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ms-secao-titulo {
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--cor-quaternaria);
+}
+
+.ms-secao-subtitulo {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.55;
+    margin-top: -8px;
+}
+
+/* ── Layout de campos ── */
+.ms-campo-full {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ms-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.ms-linha-dupla {
+    display: flex;
+    gap: 16px;
+}
+
+.ms-label {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+/* ── Inputs ── */
+.ms-input {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ms-input:focus {
+    border-color: var(--cor-secundaria);
+    background-color: white;
+}
+
+.ms-select {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.ms-select:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.ms-textarea {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 90px;
+    transition: border-color 0.15s;
+}
+
+.ms-textarea:focus {
+    border-color: var(--cor-secundaria);
+}
+
+/* ── Gênero (botões pill) ── */
+.ms-radio-grupo {
+    display: flex;
+    gap: 10px;
+}
+
+.ms-radio-opcao {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    transition: all 0.2s;
+}
+
+.ms-radio-opcao:hover {
+    border-color: var(--cor-terciaria);
+}
+
+.ms-radio-selecionado {
+    background-color: var(--cor-primaria);
+    border-color: var(--cor-primaria);
+    color: white;
+}
+
+/* ── Grid de sintomas ── */
+.ms-sintomas-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.ms-sintoma-card {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.ms-sintoma-card:hover {
+    border-color: var(--cor-terciaria);
+}
+
+.ms-sintoma-marcado {
+    background-color: var(--cor-terciaria);
+    border-color: var(--cor-secundaria);
+}
+
+.ms-sintoma-check {
+    accent-color: var(--cor-primaria);
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* ── Rodapé ── */
+.ms-rodape {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px 24px;
+    border-top: 1px solid var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.ms-btn-secundario {
+    background: white;
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    transition: background-color 0.2s;
+}
+
+.ms-btn-secundario:hover {
+    background-color: var(--cor-quaternaria);
+}
+
+.ms-btn-primario {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.ms-btn-primario:hover {
+    background-color: var(--cor-secundaria);
 }

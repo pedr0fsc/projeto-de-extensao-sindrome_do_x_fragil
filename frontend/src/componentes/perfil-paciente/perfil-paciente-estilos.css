@@ -1,0 +1,279 @@
+@import "../../variaveis.css";
+
+.perfil-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+}
+
+.perfil-modal {
+    background: white;
+    border-radius: 20px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 48px rgba(44, 105, 117, 0.18);
+}
+
+/* Header */
+.perfil-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 28px;
+    background-color: var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.perfil-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background-color: var(--cor-primaria);
+    color: white;
+    font-family: "Nunito", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.perfil-header-info {
+    flex: 1;
+}
+
+.perfil-header-info h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0 0 4px 0;
+}
+
+.perfil-cpf {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.6;
+}
+
+.perfil-btn-fechar {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    opacity: 0.45;
+    line-height: 1;
+    padding: 4px;
+    align-self: flex-start;
+}
+
+.perfil-btn-fechar:hover {
+    opacity: 1;
+}
+
+/* Dados rápidos */
+.perfil-dados {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 1px solid var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.perfil-dado-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 20px;
+    border-right: 1px solid var(--cor-quaternaria);
+}
+
+.perfil-dado-item:last-child {
+    border-right: none;
+}
+
+.perfil-dado-label {
+    font-family: "Nunito", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.perfil-dado-valor {
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+/* Sintomas */
+.perfil-sintomas {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--cor-quaternaria);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.perfil-secao-titulo {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.perfil-sintomas-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.perfil-sintoma-tag {
+    background-color: rgba(104, 178, 160, 0.15);
+    color: var(--cor-primaria);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Histórico */
+.perfil-historico {
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.perfil-historico-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.perfil-historico-total {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-secundaria);
+    background-color: rgba(104, 178, 160, 0.15);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.perfil-tabela {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.perfil-tabela th {
+    text-align: left;
+    padding: 8px 10px;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    opacity: 0.55;
+    border-bottom: 2px solid var(--cor-quaternaria);
+}
+
+.perfil-tabela td {
+    padding: 12px 10px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    border-bottom: 1px solid var(--cor-quaternaria);
+}
+
+.perfil-tabela tr:last-child td {
+    border-bottom: none;
+}
+
+.perfil-td-data {
+    white-space: nowrap;
+    color: var(--cor-primaria) !important;
+    font-weight: 600 !important;
+}
+
+.perfil-btn-pdf {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-primaria);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.perfil-btn-pdf:hover {
+    background-color: var(--cor-terciaria);
+}
+
+/* Rodapé */
+.perfil-rodape {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 28px;
+    border-top: 1px solid var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.perfil-btn-fechar-rodape {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.perfil-btn-fechar-rodape:hover {
+    background-color: var(--cor-terciaria);
+}
+
+.perfil-btn-prontuario {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.perfil-btn-prontuario:hover {
+    background-color: var(--cor-secundaria);
+}

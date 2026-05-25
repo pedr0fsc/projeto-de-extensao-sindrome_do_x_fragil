@@ -1,0 +1,243 @@
+@import "../../variaveis.css";
+
+.prontuario-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.prontuario-modal {
+    background: white;
+    border-radius: 16px;
+    width: 560px;
+    max-width: 95vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(44, 105, 117, 0.18);
+}
+
+.prontuario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.prontuario-header h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0 0 4px 0;
+}
+
+.prontuario-subtitulo {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    color: var(--cor-texto);
+    opacity: 0.55;
+}
+
+.prontuario-btn-fechar {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    opacity: 0.45;
+    line-height: 1;
+    padding: 2px;
+    flex-shrink: 0;
+}
+
+.prontuario-btn-fechar:hover {
+    opacity: 1;
+}
+
+.prontuario-corpo {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+}
+
+.prontuario-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prontuario-label {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.prontuario-label-hint {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--cor-secundaria);
+    background-color: rgba(104, 178, 160, 0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.prontuario-input {
+    border: 1.5px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    color: var(--cor-texto);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.prontuario-input:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.prontuario-textarea {
+    border: 1.5px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    color: var(--cor-texto);
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.15s;
+    line-height: 1.55;
+}
+
+.prontuario-textarea:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.prontuario-textarea-grande {
+    min-height: 120px;
+}
+
+.prontuario-rodape {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 18px 28px;
+    border-top: 1px solid var(--cor-quaternaria);
+    flex-shrink: 0;
+}
+
+.prontuario-btn-cancelar {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.prontuario-btn-cancelar:hover {
+    background-color: var(--cor-terciaria);
+}
+
+.prontuario-btn-salvar {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.prontuario-btn-salvar:hover:not(:disabled) {
+    background-color: var(--cor-secundaria);
+}
+
+.prontuario-btn-salvar:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Success state */
+.prontuario-sucesso {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 28px 32px;
+    text-align: center;
+}
+
+.prontuario-sucesso-icone {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgba(104, 178, 160, 0.2);
+    color: var(--cor-primaria);
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prontuario-sucesso h3 {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0;
+}
+
+.prontuario-sucesso p {
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    opacity: 0.6;
+    margin: 0;
+}
+
+.prontuario-sucesso-acoes {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.prontuario-btn-pdf {
+    background-color: var(--cor-secundaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.prontuario-btn-pdf:hover {
+    background-color: var(--cor-primaria);
+}
