@@ -1,0 +1,96 @@
+@import "../../variaveis.css";
+
+.erro-layout {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--cor-quaternaria);
+    font-family: "Nunito", sans-serif;
+}
+
+.erro-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    text-align: center;
+    padding: 48px 40px;
+    background-color: var(--cor-fundo);
+    border-radius: 24px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 4px 32px rgba(44, 105, 117, 0.10);
+}
+
+.erro-codigo {
+    font-size: 96px;
+    font-weight: 800;
+    color: var(--cor-primaria);
+    line-height: 1;
+    letter-spacing: -4px;
+}
+
+.erro-divisor {
+    width: 48px;
+    height: 4px;
+    background-color: var(--cor-terciaria);
+    border-radius: 2px;
+}
+
+.erro-titulo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cor-texto);
+    margin: 0;
+}
+
+.erro-descricao {
+    font-size: 15px;
+    color: var(--cor-texto);
+    opacity: 0.6;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.erro-acoes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.erro-btn-primario {
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.erro-btn-primario:hover {
+    background-color: var(--cor-secundaria);
+}
+
+.erro-btn-secundario {
+    background-color: var(--cor-quaternaria);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-family: "Nunito", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.erro-btn-secundario:hover {
+    background-color: var(--cor-terciaria);
+}
