@@ -5,6 +5,7 @@ CREATE TABLE usuario(
 	id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
     ativo BOOLEAN NOT NULL,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
@@ -19,14 +20,14 @@ CREATE TABLE medico(
 
 CREATE TABLE paciente(
 	id INT AUTO_INCREMENT PRIMARY KEY,
-    id_medico INT NOT NULL,
+    id_medico_que_cadastrou INT NOT NULL,
     nome VARCHAR(150) NOT NULL,
     sexo ENUM('Feminino', 'Masculino') NOT NULL,
     data_nascimento DATE NOT NULL,
 	telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_medico)  REFERENCES medico(id)
+    FOREIGN KEY (id_medico_que_cadastrou)  REFERENCES medico(id)
 );
 
 CREATE TABLE triagem(
@@ -36,6 +37,7 @@ CREATE TABLE triagem(
     nome_responsavel VARCHAR(100) NULL,
     grau_responsavel VARCHAR(100) NULL,
     observacoes TEXT,
+	realizada_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_medico) REFERENCES medico(id),
     FOREIGN KEY (id_paciente) REFERENCES paciente(id)
     
@@ -65,7 +67,11 @@ CREATE TABLE resultado(
     justificativa VARCHAR(100),
     gerado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_triagem) REFERENCES triagem(id)
-
+);
+CREATE TABLE limiar(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sexo ENUM('Feminino', 'Masculino') NOT NULL,
+    valor DECIMAL(3,2) NOT NULL
 );
 
 CREATE TABLE notificacao(
@@ -73,24 +79,29 @@ CREATE TABLE notificacao(
     id_resultado INT NOT NULL,
     destinatario VARCHAR(150) NOT NULL,
     enviado_em TIMESTAMP,
-    tipo_envio ENUM('email', 'whats') NOT NULL,
     FOREIGN KEY (id_resultado) REFERENCES resultado(id)
 );
 
 INSERT INTO sintomas (nome, peso_feminino, peso_masculino)
 VALUES
-	('Deficiência intelectual', 0.32, 0.20),
-	('Face alongada/orelhas', 0.29, 0.09),
-	('Macroorquidismo', 0.26, NULL),
-	('Hipermobilidade articular', 0.19, 0.04),
-	('Dificuldades de aprendizagem', 0.18, 0.28),
-	('Déficit de atenção', 0.17, 0.12),
-	('Mov. repetitivos', 0.17, 0.05),
-	('Atraso na fala', 0.14, 0.01),
-	('Hiperatividade', 0.12, 0.04),
-	('Evita contato visual', 0.06, 0.08),
-	('Evita contato físico', 0.04, 0.07),
-	('Agressividade', 0.01, 0.02);
+    ('Deficiência intelectual', 0.20, 0.32),
+    ('Face alongada/orelhas', 0.09, 0.29),
+    ('Macroorquidismo', NULL, 0.26),
+    ('Hipermobilidade articular', 0.04, 0.19),
+    ('Dificuldades de aprendizagem', 0.28, 0.18),
+    ('Déficit de atenção', 0.12, 0.17),
+    ('Mov. repetitivos', 0.05, 0.17),
+    ('Atraso na fala', 0.01, 0.14),
+    ('Hiperatividade', 0.04, 0.12),
+    ('Evita contato visual', 0.08, 0.06),
+    ('Evita contato físico', 0.07, 0.04),
+    ('Agressividade', 0.02, 0.01);
 
 
-SELECT* FROM sintomas;
+SELECT * FROM sintomas;
+INSERT INTO limiar (sexo, valor)
+VALUES
+('Masculino', 0.56),
+('Feminino', 0.55);
+
+SELECT * FROM limiar;
