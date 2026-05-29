@@ -15,6 +15,8 @@ from email.mime.multipart import MIMEMultipart
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "sxf_secret"), session_cookie="sxf_session", max_age=28800)
