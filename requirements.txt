@@ -1,0 +1,10 @@
+fastapi           # Framework web para construção da API
+uvicorn           # Servidor ASGI para rodar a aplicação FastAPI
+sqlalchemy        # ORM para mapeamento e manipulação do banco de dados
+pymysql           # Driver para conexão com o banco de dados MySQL
+cryptography      # Necessário para autenticação segura no MySQL/SQLAlchemy
+python-dotenv     # Gerenciamento de variáveis de ambiente (.env)
+reportlab         # Biblioteca para geração de relatórios em PDF
+mangum            # Adaptador para rodar a aplicação em AWS Lambda (se necessário)
+itsdangerous      # Necessário para assinatura segura de cookies de sessão
+python-multipart  # Necessário para processar dados de formulários e uploads
