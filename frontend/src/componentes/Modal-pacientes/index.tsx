@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './modal-pacientes-estilos.css'
 
 interface Props {
@@ -6,21 +6,6 @@ interface Props {
 }
 
 const TOTAL_STEPS = 3
-
-const sintomasList = [
-    { label: 'Deficiência intelectual', name: 'deficiencia_intelectual' },
-    { label: 'Face alongada/orelha', name: 'face_alongada_orelha' },
-    { label: 'Macroorquidismo', name: 'macroorquidismo' },
-    { label: 'Hipermobilidade articular', name: 'hipermobilidade_articular' },
-    { label: 'Dificuldades de aprendizagem', name: 'dificuldades_aprendizagem' },
-    { label: 'Déficit de atenção', name: 'deficit_atencao' },
-    { label: 'Mov. repetitivo', name: 'movimento_repetitivo' },
-    { label: 'Atraso na fala', name: 'atraso_fala' },
-    { label: 'Hiperatividade', name: 'hiperatividade' },
-    { label: 'Evita contato visual', name: 'evita_contato_visual' },
-    { label: 'Evita contato físico', name: 'evita_contato_fisico' },
-    { label: 'Agressividade', name: 'agressividade' },
-]
 
 const acompanhanteOpcoes = [
     { value: 'mae', label: 'Mãe' },
@@ -30,15 +15,102 @@ const acompanhanteOpcoes = [
 
 const stepsTitulos = ['Dados Básicos', 'Acompanhante', 'Sintomas']
 
+interface Sintoma {
+    id: number
+    nome: string
+}
+
 export function ModalCadastrarPaciente({ onFechar }: Props) {
     const [step, setStep] = useState(1)
+    
+    // Dados Básicos
+    const [nome, setNome] = useState('')
+    const [cpf, setCpf] = useState('')
+    const [dataNascimento, setDataNascimento] = useState('')
     const [genero, setGenero] = useState('')
-    const [sintomasMarcados, setSintomasMarcados] = useState<string[]>([])
+    const [telefone, setTelefone] = useState('')
+    const [email, setEmail] = useState('')
+    
+    // Acompanhante
+    const [tipoAcompanhante, setTipoAcompanhante] = useState('')
+    const [nomeAcompanhante, setNomeAcompanhante] = useState('')
+    const [observacoes, setObservacoes] = useState('')
+    
+    // Sintomas
+    const [sintomasList, setSintomasList] = useState<Sintoma[]>([])
+    const [sintomasMarcados, setSintomasMarcados] = useState<number[]>([])
 
-    const toggleSintoma = (name: string) => {
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        fetch('/api/sintomas')
+            .then(res => res.json())
+            .then(data => setSintomasList(data))
+            .catch(err => console.error("Erro ao carregar sintomas", err))
+    }, [])
+
+    const toggleSintoma = (id: number) => {
         setSintomasMarcados(prev =>
-            prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]
+            prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
         )
+    }
+
+    const handleConcluir = async () => {
+        setLoading(true)
+        try {
+            // 1. Cadastrar Paciente
+            const resPaciente = await fetch('/api/paciente/cadastrar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome,
+                    cpf,
+                    sexo: genero,
+                    data_nascimento: dataNascimento,
+                    telefone,
+                    email
+                })
+            })
+            const dataPaciente = await resPaciente.json()
+
+            if (!dataPaciente.success) {
+                alert('Erro ao cadastrar paciente: ' + (dataPaciente.detail || 'Erro desconhecido'))
+                setLoading(false)
+                return
+            }
+
+            // 2. Realizar Triagem
+            const sintomasObj: Record<string, boolean> = {}
+            sintomasMarcados.forEach(id => {
+                sintomasObj[id.toString()] = true
+            })
+
+            const resTriagem = await fetch('/api/triagem/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paciente_id: dataPaciente.id,
+                    sintomas: sintomasObj,
+                    nome_responsavel: nomeAcompanhante,
+                    grau_responsavel: tipoAcompanhante,
+                    observacoes: observacoes
+                })
+            })
+            const dataTriagem = await resTriagem.json()
+
+            if (dataTriagem.triagem_id) {
+                alert(`Triagem concluída! Score: ${dataTriagem.score}. Recomendação: ${dataTriagem.recomendacao}`)
+                onFechar()
+            } else {
+                alert('Erro ao realizar triagem')
+            }
+
+        } catch (err) {
+            console.error(err)
+            alert('Erro de conexão')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -84,22 +156,22 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             <h3 className='ms-secao-titulo'>Dados Básicos</h3>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Nome completo</label>
-                                <input className='ms-input' type="text" placeholder="Digite o nome completo" />
+                                <input className='ms-input' type="text" placeholder="Digite o nome completo" value={nome} onChange={e => setNome(e.target.value)} />
                             </div>
                             <div className='ms-linha-dupla'>
                                 <div className='ms-campo'>
-                                    <label className='ms-label'>Data de nascimento</label>
-                                    <input className='ms-input' type="date" />
+                                    <label className='ms-label'>CPF</label>
+                                    <input className='ms-input' type="text" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} />
                                 </div>
                                 <div className='ms-campo'>
-                                    <label className='ms-label'>Idade</label>
-                                    <input className='ms-input' type="number" placeholder="Ex: 10" />
+                                    <label className='ms-label'>Data de nascimento</label>
+                                    <input className='ms-input' type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} />
                                 </div>
                             </div>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Gênero</label>
                                 <div className='ms-radio-grupo'>
-                                    {['Masculino', 'Feminino', 'Outro'].map(g => (
+                                    {['Masculino', 'Feminino'].map(g => (
                                         <button
                                             key={g}
                                             type="button"
@@ -111,9 +183,15 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                     ))}
                                 </div>
                             </div>
-                            <div className='ms-campo-full'>
-                                <label className='ms-label'>E-mail</label>
-                                <input className='ms-input' type="email" placeholder="Digite o e-mail" />
+                            <div className='ms-linha-dupla'>
+                                <div className='ms-campo'>
+                                    <label className='ms-label'>Telefone</label>
+                                    <input className='ms-input' type="text" placeholder="(00) 00000-0000" value={telefone} onChange={e => setTelefone(e.target.value)} />
+                                </div>
+                                <div className='ms-campo'>
+                                    <label className='ms-label'>E-mail</label>
+                                    <input className='ms-input' type="email" placeholder="Digite o e-mail" value={email} onChange={e => setEmail(e.target.value)} />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -123,20 +201,20 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             <h3 className='ms-secao-titulo'>Dados do Acompanhante</h3>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Tipo de acompanhante</label>
-                                <select className='ms-select'>
+                                <select className='ms-select' value={tipoAcompanhante} onChange={e => setTipoAcompanhante(e.target.value)}>
                                     <option value="">Selecione</option>
                                     {acompanhanteOpcoes.map(a => (
-                                        <option key={a.value} value={a.value}>{a.label}</option>
+                                        <option key={a.value} value={a.label}>{a.label}</option>
                                     ))}
                                 </select>
                             </div>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Nome do acompanhante</label>
-                                <input className='ms-input' type="text" placeholder="Digite o nome do acompanhante" />
+                                <input className='ms-input' type="text" placeholder="Digite o nome do acompanhante" value={nomeAcompanhante} onChange={e => setNomeAcompanhante(e.target.value)} />
                             </div>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Observações</label>
-                                <textarea className='ms-textarea' placeholder="Observações adicionais sobre o paciente..." />
+                                <textarea className='ms-textarea' placeholder="Observações adicionais sobre o paciente..." value={observacoes} onChange={e => setObservacoes(e.target.value)} />
                             </div>
                         </div>
                     )}
@@ -148,16 +226,16 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             <div className='ms-sintomas-grid'>
                                 {sintomasList.map(s => (
                                     <label
-                                        key={s.name}
-                                        className={`ms-sintoma-card ${sintomasMarcados.includes(s.name) ? 'ms-sintoma-marcado' : ''}`}
+                                        key={s.id}
+                                        className={`ms-sintoma-card ${sintomasMarcados.includes(s.id) ? 'ms-sintoma-marcado' : ''}`}
                                     >
                                         <input
                                             type="checkbox"
                                             className='ms-sintoma-check'
-                                            checked={sintomasMarcados.includes(s.name)}
-                                            onChange={() => toggleSintoma(s.name)}
+                                            checked={sintomasMarcados.includes(s.id)}
+                                            onChange={() => toggleSintoma(s.id)}
                                         />
-                                        {s.label}
+                                        {s.nome}
                                     </label>
                                 ))}
                             </div>
@@ -182,8 +260,8 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             Salvar e Continuar
                         </button>
                     ) : (
-                        <button className='ms-btn-primario'>
-                            Concluir
+                        <button className='ms-btn-primario' onClick={handleConcluir} disabled={loading}>
+                            {loading ? 'Processando...' : 'Concluir'}
                         </button>
                     )}
                 </div>
