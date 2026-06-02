@@ -20,7 +20,7 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "sxf_secret"), session_cookie="sxf_session", max_age=28800)
 
 
-DB_HOST = os.getenv("DB_HOST", "database")
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASS = os.getenv("DB_PASSWORD", "")
 DB_NAME = os.getenv("DB_NAME", "sxf_triagem_db")
