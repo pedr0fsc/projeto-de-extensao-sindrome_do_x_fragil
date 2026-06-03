@@ -1,5 +1,5 @@
 import './pagina-medicos.css'
-import { ModalCadastrarPaciente } from '../../componentes/Modal-pacientes'
+import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
