@@ -52,7 +52,7 @@ class Usuario(Base):
     ativo = Column(Boolean, default=True)
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
-    tipo = Column(SQLEnum("Medico", "Administrador"), nullable=False)
+    tipo = Column(SQLEnum("Médico", "Administrador"), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
 
 
@@ -504,7 +504,7 @@ async def api_criar_usuario(request: Request, db=Depends(get_db), _=Depends(requ
     )
     db.add(novo)
     db.flush()
-    if body["tipo"] == "Medico" and body.get("crm"):
+    if body["tipo"] == "Médico" and body.get("crm"):
         db.add(Medico(id=novo.id, crm=body["crm"]))
     db.commit()
     return {"success": True, "id": novo.id}

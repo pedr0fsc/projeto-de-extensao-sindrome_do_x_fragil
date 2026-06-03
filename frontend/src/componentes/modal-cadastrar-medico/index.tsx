@@ -12,7 +12,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
     const [senha, setSenha] = useState('')
     const [telefone, setTelefone] = useState('')
     const [crm, setCrm] = useState('')
-    const [tipo, setTipo] = useState<'Medico' | 'Administrador'>('Medico')
+    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
     const [loading, setLoading] = useState(false)
 
     const handleConcluir = async () => {
@@ -28,7 +28,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     senha,
                     telefone,
                     tipo,
-                    crm: tipo === 'Medico' ? crm : undefined
+                    crm: tipo === 'Médico' ? crm : undefined
                 })
             })
             const data = await response.json()
@@ -82,12 +82,12 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                         <div className='form-campo'>
                             <label>Tipo</label>
                             <select value={tipo} onChange={e => setTipo(e.target.value as any)}>
-                                <option value="Medico">Médico</option>
+                                <option value="Médico">Médico</option>
                                 <option value="Administrador">Administrador</option>
                             </select>
                         </div>
                     </div>
-                    {tipo === 'Medico' && (
+                    {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
                             <input type="text" value={crm} onChange={e => setCrm(e.target.value)} />
