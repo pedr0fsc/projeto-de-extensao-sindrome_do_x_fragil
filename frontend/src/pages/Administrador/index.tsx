@@ -1,5 +1,5 @@
 import './administrador-estilos.css'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
@@ -11,33 +11,107 @@ import pincelImg from '../../assets/pincel.png'
 
 type Visao = 'dashboard' | 'medicos' | 'pacientes'
 
-const medicosMock = [
-    { nome: 'Dr. João Silva', idade: 35, genero: 'M', crm: '123456' },
-    { nome: 'Dra. Ana Lima', idade: 42, genero: 'F', crm: '654321' },
-    { nome: 'Dr. Carlos Melo', idade: 38, genero: 'M', crm: '789012' },
-]
+interface Medico {
+    id: number
+    nome: string
+    crm: string
+}
 
-const pacientesMock = [
-    { nome: 'João Silva', idade: '10 anos', genero: 'M', nascimento: '01/01/2016', ultimaConsulta: '20/05/2026' },
-    { nome: 'Ana Costa', idade: '8 anos', genero: 'F', nascimento: '15/03/2018', ultimaConsulta: '18/05/2026' },
-    { nome: 'Pedro Lima', idade: '12 anos', genero: 'M', nascimento: '22/07/2014', ultimaConsulta: '15/05/2026' },
-]
+interface Paciente {
+    id: number
+    nome: string
+    cpf: string
+    sexo: string
+    data_nascimento: string
+    telefone: string
+    email: string
+}
 
-const atividadesMedicos = [
-    { medico: 'Dr. João Silva', crm: '123456', consultasMes: 12, totalPacientes: 18 },
-    { medico: 'Dra. Ana Lima', crm: '654321', consultasMes: 9, totalPacientes: 14 },
-    { medico: 'Dr. Carlos Melo', crm: '789012', consultasMes: 15, totalPacientes: 20 },
-]
+interface Relatorio {
+    paciente: string
+    sexo: string
+    data: string
+    score: number
+    recomendacao: string
+    medico: string
+    atingiu_limiar: boolean
+}
+
+function calcularIdade(dataNascimento: string) {
+    const hoje = new Date()
+    const nascimento = new Date(dataNascimento)
+    let idade = hoje.getFullYear() - nascimento.getFullYear()
+    const m = hoje.getMonth() - nascimento.getMonth()
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--
+    }
+    return idade
+}
 
 export function PaginaAdministrador() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
     const [visao, setVisao] = useState<Visao>('dashboard')
+    const [medicos, setMedicos] = useState<Medico[]>([])
+    const [pacientes, setPacientes] = useState<Paciente[]>([])
+    const [relatorios, setRelatorios] = useState<Relatorio[]>([])
+    const [stats, setStats] = useState({
+        totalMedicos: 0,
+        totalPacientes: 0,
+        totalTriagens: 0,
+        encaminhados: 0
+    })
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true)
+            try {
+                const [resMedicos, resPacientes, resRelatorios] = await Promise.all([
+                    fetch('/api/medicos'),
+                    fetch('/api/pacientes'),
+                    fetch('/api/relatorios')
+                ])
+
+                const dataMedicos = await resMedicos.json()
+                const dataPacientes = await resPacientes.json()
+                const dataRelatorios = await resRelatorios.json()
+
+                setMedicos(dataMedicos || [])
+                setPacientes(dataPacientes || [])
+                setRelatorios(dataRelatorios.relatorios || [])
+                setStats({
+                    totalMedicos: dataMedicos.length || 0,
+                    totalPacientes: dataPacientes.length || 0,
+                    totalTriagens: dataRelatorios.total || 0,
+                    encaminhados: dataRelatorios.encaminhados || 0
+                })
+            } catch (err) {
+                console.error("Erro ao carregar dados admin:", err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [])
+
+    // Agrupar atividades por médico
+    const atividadesMedicos = medicos.map(m => {
+        const triagensMedico = relatorios.filter(r => r.medico === m.nome)
+        return {
+            medico: m.nome,
+            crm: m.crm,
+            consultas: triagensMedico.length,
+            pacientes: new Set(triagensMedico.map(r => r.paciente)).size
+        }
+    })
+
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Carregando Painel Admin...</div>
 
     return (
         <div className='admin-layout'>
             <aside className='admin-sidebar'>
                 <div className='sidebar-logo'>
-                    <h3>Logo do projeto</h3>
+                    <h3>SXF Admin</h3>
                 </div>
                 <nav className='sidebar-nav'>
                     <button
@@ -84,35 +158,35 @@ export function PaginaAdministrador() {
                             <div className='dashboard-cards'>
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Médicos</span>
-                                    <span className='dashboard-card-valor'>8</span>
+                                    <span className='dashboard-card-valor'>{stats.totalMedicos}</span>
                                     <span className='dashboard-card-sub'>Ativos no sistema</span>
                                 </div>
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Pacientes</span>
-                                    <span className='dashboard-card-valor'>48</span>
-                                    <span className='dashboard-card-sub'>+5 este mês</span>
+                                    <span className='dashboard-card-valor'>{stats.totalPacientes}</span>
+                                    <span className='dashboard-card-sub'>Cadastrados</span>
                                 </div>
                                 <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Consultas este Mês</span>
-                                    <span className='dashboard-card-valor'>36</span>
-                                    <span className='dashboard-card-sub'>↑ 8 a mais que o mês anterior</span>
+                                    <span className='dashboard-card-titulo'>Total de Triagens</span>
+                                    <span className='dashboard-card-valor'>{stats.totalTriagens}</span>
+                                    <span className='dashboard-card-sub'>Realizadas no total</span>
                                 </div>
                                 <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Diagnósticos este Mês</span>
-                                    <span className='dashboard-card-valor'>15</span>
-                                    <span className='dashboard-card-sub'>Síndrome do X Frágil</span>
+                                    <span className='dashboard-card-titulo'>Encaminhados</span>
+                                    <span className='dashboard-card-valor'>{stats.encaminhados}</span>
+                                    <span className='dashboard-card-sub'>Para teste genético</span>
                                 </div>
                             </div>
 
                             <div className='admin-tabela-container'>
-                                <h3 className='dashboard-secao-titulo'>Atividade por Médico — Maio 2026</h3>
+                                <h3 className='dashboard-secao-titulo'>Atividade por Médico</h3>
                                 <table className='admin-tabela'>
                                     <thead>
                                         <tr>
                                             <th>Médico</th>
                                             <th>CRM</th>
-                                            <th>Consultas este Mês</th>
-                                            <th>Total de Pacientes</th>
+                                            <th>Triagens Realizadas</th>
+                                            <th>Pacientes Atendidos</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -121,8 +195,8 @@ export function PaginaAdministrador() {
                                             <tr key={i}>
                                                 <td>{a.medico}</td>
                                                 <td>{a.crm}</td>
-                                                <td>{a.consultasMes}</td>
-                                                <td>{a.totalPacientes}</td>
+                                                <td>{a.consultas}</td>
+                                                <td>{a.pacientes}</td>
                                                 <td>
                                                     <span className='status-badge status-ativo'>Ativo</span>
                                                 </td>
@@ -133,23 +207,25 @@ export function PaginaAdministrador() {
                             </div>
 
                             <div className='admin-tabela-container'>
-                                <h3 className='dashboard-secao-titulo'>Últimos Pacientes Cadastrados</h3>
+                                <h3 className='dashboard-secao-titulo'>Últimas Triagens Realizadas</h3>
                                 <table className='admin-tabela'>
                                     <thead>
                                         <tr>
-                                            <th>Nome</th>
-                                            <th>Idade</th>
-                                            <th>Gênero</th>
-                                            <th>Última Consulta</th>
+                                            <th>Paciente</th>
+                                            <th>Sexo</th>
+                                            <th>Médico</th>
+                                            <th>Data</th>
+                                            <th>Score</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pacientesMock.map((p, i) => (
+                                        {relatorios.slice(0, 5).map((r, i) => (
                                             <tr key={i}>
-                                                <td>{p.nome}</td>
-                                                <td>{p.idade}</td>
-                                                <td>{p.genero === 'M' ? 'Masculino' : 'Feminino'}</td>
-                                                <td>{p.ultimaConsulta}</td>
+                                                <td>{r.paciente}</td>
+                                                <td>{r.sexo}</td>
+                                                <td>{r.medico}</td>
+                                                <td>{r.data}</td>
+                                                <td>{r.score.toFixed(3)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -168,8 +244,6 @@ export function PaginaAdministrador() {
                             </div>
                             <div className='admin-filtros'>
                                 <button className='filtro-chip'>Nome</button>
-                                <button className='filtro-chip'>Idade</button>
-                                <button className='filtro-chip'>Sexo</button>
                                 <button className='filtro-chip'>CRM</button>
                             </div>
                             <div className='admin-tabela-container'>
@@ -178,18 +252,14 @@ export function PaginaAdministrador() {
                                     <thead>
                                         <tr>
                                             <th>Nome</th>
-                                            <th>Idade</th>
-                                            <th>M/F</th>
                                             <th>CRM</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {medicosMock.map((m, i) => (
+                                        {medicos.map((m, i) => (
                                             <tr key={i}>
                                                 <td>{m.nome}</td>
-                                                <td>{m.idade}</td>
-                                                <td>{m.genero}</td>
                                                 <td>{m.crm}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
@@ -222,20 +292,20 @@ export function PaginaAdministrador() {
                                         <tr>
                                             <th>Nome</th>
                                             <th>Idade</th>
-                                            <th>M/F</th>
+                                            <th>Gênero</th>
                                             <th>Nascimento</th>
-                                            <th>Última consulta</th>
+                                            <th>CPF</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pacientesMock.map((p, i) => (
+                                        {pacientes.map((p, i) => (
                                             <tr key={i}>
                                                 <td>{p.nome}</td>
-                                                <td>{p.idade}</td>
-                                                <td>{p.genero}</td>
-                                                <td>{p.nascimento}</td>
-                                                <td>{p.ultimaConsulta}</td>
+                                                <td>{calcularIdade(p.data_nascimento)} anos</td>
+                                                <td>{p.sexo}</td>
+                                                <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
+                                                <td>{p.cpf}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
                                                         <button className='btn-acao'><img src={lixeiraImg} alt="Excluir" /></button>
@@ -253,7 +323,10 @@ export function PaginaAdministrador() {
             </div>
 
             {modalCadastrarAberto && (
-                <ModalCadastrarMedico onFechar={() => setModalCadastrarAberto(false)} />
+                <ModalCadastrarMedico onFechar={() => {
+                    setModalCadastrarAberto(false)
+                    window.location.reload()
+                }} />
             )}
         </div>
     )

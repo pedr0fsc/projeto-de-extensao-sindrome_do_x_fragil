@@ -1,7 +1,7 @@
 import './pagina-medicos.css'
 import { ModalCadastrarPaciente } from '../../componentes/Modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import dashboardImg from '../../assets/dashboard.png'
 import pacienteImg from '../../assets/paciente.png'
@@ -13,72 +13,111 @@ import { gerarPdfConsulta } from '../../utils/gerarPDF'
 
 type Visao = 'dashboard' | 'pacientes'
 
-const consultasRecentes = [
-    {
-        nome: 'João Silva',
-        data: '20/05/2026',
-        sintomas: ['Deficiência intelectual', 'Atraso na fala', 'Hiperatividade'],
-        observacoes: 'Paciente apresentou melhora no comportamento após intervenção terapêutica.',
-        status: 'Concluída',
-    },
-    {
-        nome: 'Ana Costa',
-        data: '18/05/2026',
-        sintomas: ['Hipermobilidade articular', 'Dificuldades de aprendizagem', 'Déficit de atenção', 'Mov. repetitivo', 'Evita contato visual'],
-        observacoes: 'Iniciado acompanhamento fonoaudiológico semanal.',
-        status: 'Concluída',
-    },
-    {
-        nome: 'Pedro Lima',
-        data: '15/05/2026',
-        sintomas: ['Agressividade', 'Evita contato físico'],
-        observacoes: 'Encaminhado para avaliação neuropsicológica.',
-        status: 'Concluída',
-    },
-    {
-        nome: 'Maria Santos',
-        data: '10/05/2026',
-        sintomas: ['Deficiência intelectual', 'Face alongada/orelha', 'Macroorquidismo', 'Atraso na fala', 'Hiperatividade', 'Déficit de atenção', 'Evita contato visual'],
-        observacoes: 'Paciente com quadro clínico característico. Exame genético solicitado.',
-        status: 'Concluída',
-    },
-]
+interface Paciente {
+    id: number
+    nome: string
+    cpf: string
+    sexo: string
+    data_nascimento: string
+    telefone: string
+    email: string
+}
 
-const pacientesMock = [
-    { nome: 'João Silva', idade: '10 anos', genero: 'Masculino', nascimento: '01/01/2016', ultimaConsulta: '20/05/2026', cpf: '000.000.000-00' },
-    { nome: 'Ana Costa', idade: '8 anos', genero: 'Feminino', nascimento: '15/03/2018', ultimaConsulta: '18/05/2026', cpf: '111.111.111-11' },
-    { nome: 'Pedro Lima', idade: '12 anos', genero: 'Masculino', nascimento: '22/07/2014', ultimaConsulta: '15/05/2026', cpf: '222.222.222-22' },
-]
+interface ConsultaRecente {
+    paciente: string
+    sexo: string
+    data: string
+    score: number
+    recomendacao: string
+    medico: string
+    atingiu_limiar: boolean
+}
+
+function calcularIdade(dataNascimento: string) {
+    const hoje = new Date()
+    const nascimento = new Date(dataNascimento)
+    let idade = hoje.getFullYear() - nascimento.getFullYear()
+    const m = hoje.getMonth() - nascimento.getMonth()
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--
+    }
+    return idade
+}
 
 export function PaginaMedicos() {
     const [visao, setVisao] = useState<Visao>('dashboard')
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
     const [modalConsultarAberto, setModalConsultarAberto] = useState(false)
+    const [pacientes, setPacientes] = useState<Paciente[]>([])
+    const [consultasRecentes, setConsultasRecentes] = useState<ConsultaRecente[]>([])
+    const [stats, setStats] = useState({
+        totalPacientes: 0,
+        consultasMes: 0,
+        encaminhados: 0,
+        novosPacientes: 0
+    })
+    const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
-    function handleGerarPdf(paciente: typeof pacientesMock[0], consulta: typeof consultasRecentes[0]) {
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true)
+            try {
+                const [resPacientes, resRelatorios] = await Promise.all([
+                    fetch('/api/pacientes'),
+                    fetch('/api/relatorios')
+                ])
+
+                if (resPacientes.ok) {
+                    const data = await resPacientes.json()
+                    setPacientes(data)
+                }
+
+                if (resRelatorios.ok) {
+                    const data = await resRelatorios.json()
+                    setConsultasRecentes(data.relatorios || [])
+                    setStats({
+                        totalPacientes: data.total || 0,
+                        consultasMes: data.total || 0, // Simplified for now
+                        encaminhados: data.encaminhados || 0,
+                        novosPacientes: data.total || 0 // Simplified for now
+                    })
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados:", err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [])
+
+    function handleGerarPdf(paciente: Paciente, consulta: ConsultaRecente) {
         gerarPdfConsulta({
             paciente: {
                 nome: paciente.nome,
                 cpf: paciente.cpf,
-                idade: parseInt(paciente.idade),
-                genero: paciente.genero,
-                dataNascimento: paciente.nascimento,
+                idade: calcularIdade(paciente.data_nascimento),
+                genero: paciente.sexo,
+                dataNascimento: paciente.data_nascimento.split('-').reverse().join('/'),
             },
             consulta: {
-                data: paciente.ultimaConsulta,
-                medico: 'Dr. Médico Responsável',
-                sintomas: consulta.sintomas,
-                observacoes: consulta.observacoes,
+                data: consulta.data,
+                medico: consulta.medico,
+                sintomas: [], // Backend doesn't return symptoms in /api/relatorios directly
+                observacoes: consulta.recomendacao,
             },
         })
     }
+
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Carregando...</div>
 
     return (
         <div className='medico-layout'>
             <aside className='medico-sidebar'>
                 <div className='sidebar-logo'>
-                    <h3>Logo do projeto</h3>
+                    <h3>SXF Triagem</h3>
                 </div>
                 <nav className='sidebar-nav'>
                     <button
@@ -118,34 +157,34 @@ export function PaginaMedicos() {
                             <div className='dashboard-cards'>
                                 <div className='dashboard-card'>
                                     <span className='dashboard-card-titulo'>Total de Pacientes</span>
-                                    <span className='dashboard-card-valor'>24</span>
-                                    <span className='dashboard-card-sub'>+2 este mês</span>
+                                    <span className='dashboard-card-valor'>{pacientes.length}</span>
+                                    <span className='dashboard-card-sub'>Cadastrados por você</span>
                                 </div>
                                 <div className='dashboard-card'>
-                                    <span className='dashboard-card-titulo'>Consultas este Mês</span>
-                                    <span className='dashboard-card-valor'>12</span>
-                                    <span className='dashboard-card-sub'>↑ 3 a mais que o mês anterior</span>
+                                    <span className='dashboard-card-titulo'>Total de Triagens</span>
+                                    <span className='dashboard-card-valor'>{stats.totalPacientes}</span>
+                                    <span className='dashboard-card-sub'>Realizadas no sistema</span>
                                 </div>
                                 <div className='dashboard-card'>
-                                    <span className='dashboard-card-titulo'>Avaliações Pendentes</span>
-                                    <span className='dashboard-card-valor'>3</span>
-                                    <span className='dashboard-card-sub'>Aguardando análise</span>
+                                    <span className='dashboard-card-titulo'>Encaminhados</span>
+                                    <span className='dashboard-card-valor'>{stats.encaminhados}</span>
+                                    <span className='dashboard-card-sub'>Atingiram o limiar</span>
                                 </div>
                                 <div className='dashboard-card'>
                                     <span className='dashboard-card-titulo'>Novos Pacientes</span>
-                                    <span className='dashboard-card-valor'>5</span>
-                                    <span className='dashboard-card-sub'>Nos últimos 30 dias</span>
+                                    <span className='dashboard-card-valor'>{pacientes.length}</span>
+                                    <span className='dashboard-card-sub'>Total acumulado</span>
                                 </div>
                             </div>
 
                             <div className='medico-tabela-container'>
-                                <h3 className='dashboard-secao-titulo'>Consultas Recentes</h3>
+                                <h3 className='dashboard-secao-titulo'>Triagens Recentes</h3>
                                 <table className='medico-tabela'>
                                     <thead>
                                         <tr>
                                             <th>Paciente</th>
                                             <th>Data</th>
-                                            <th>Sintomas Registrados</th>
+                                            <th>Score</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -153,19 +192,23 @@ export function PaginaMedicos() {
                                     <tbody>
                                         {consultasRecentes.map((c, i) => (
                                             <tr key={i}>
-                                                <td>{c.nome}</td>
+                                                <td>{c.paciente}</td>
                                                 <td>{c.data}</td>
-                                                <td>{c.sintomas.length} sintoma(s)</td>
+                                                <td>{c.score.toFixed(3)}</td>
                                                 <td>
-                                                    <span className='status-badge status-concluida'>{c.status}</span>
+                                                    <span className={`status-badge ${c.atingiu_limiar ? 'status-pendente' : 'status-concluida'}`}>
+                                                        {c.atingiu_limiar ? 'Encaminhar' : 'Observação'}
+                                                    </span>
                                                 </td>
                                                 <td>
+                                                    {/* In a real app, we'd fetch the specific triage for symptoms/obs */}
                                                     <button
                                                         className='btn-pdf'
-                                                        onClick={() => gerarPdfConsulta({
-                                                            paciente: { nome: c.nome, cpf: '000.000.000-00', idade: 10, genero: 'Masculino', dataNascimento: '01/01/2016' },
-                                                            consulta: { data: c.data, medico: 'Dr. Médico Responsável', sintomas: c.sintomas, observacoes: c.observacoes },
-                                                        })}
+                                                        onClick={() => {
+                                                            const p = pacientes.find(p => p.nome === c.paciente)
+                                                            if (p) handleGerarPdf(p, c)
+                                                            else alert('Dados do paciente não encontrados para gerar PDF')
+                                                        }}
                                                     >
                                                         Gerar PDF
                                                     </button>
@@ -197,7 +240,6 @@ export function PaginaMedicos() {
                                 <button className='filtro-chip'>Idade</button>
                                 <button className='filtro-chip'>Sexo</button>
                                 <button className='filtro-chip'>Data de nascimento</button>
-                                <button className='filtro-chip'>Última consulta</button>
                             </div>
 
                             <div className='medico-tabela-container'>
@@ -209,28 +251,22 @@ export function PaginaMedicos() {
                                             <th>Idade</th>
                                             <th>Gênero</th>
                                             <th>Nascimento</th>
-                                            <th>Última consulta</th>
+                                            <th>CPF</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pacientesMock.map((p, i) => (
+                                        {pacientes.map((p, i) => (
                                             <tr key={i}>
                                                 <td>{p.nome}</td>
-                                                <td>{p.idade}</td>
-                                                <td>{p.genero}</td>
-                                                <td>{p.nascimento}</td>
-                                                <td>{p.ultimaConsulta}</td>
+                                                <td>{calcularIdade(p.data_nascimento)} anos</td>
+                                                <td>{p.sexo}</td>
+                                                <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
+                                                <td>{p.cpf}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
                                                         <button className='btn-tabela'><img src={lixeiraImg} alt="Excluir" /></button>
                                                         <button className='btn-tabela'><img src={pincelImg} alt="Editar" /></button>
-                                                        <button
-                                                            className='btn-pdf'
-                                                            onClick={() => handleGerarPdf(p, consultasRecentes[i] ?? consultasRecentes[0])}
-                                                        >
-                                                            Gerar PDF
-                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -244,7 +280,10 @@ export function PaginaMedicos() {
             </div>
 
             {modalCadastrarAberto && (
-                <ModalCadastrarPaciente onFechar={() => setModalCadastrarAberto(false)} />
+                <ModalCadastrarPaciente onFechar={() => {
+                    setModalCadastrarAberto(false)
+                    window.location.reload() // Simple way to refresh data
+                }} />
             )}
             {modalConsultarAberto && (
                 <ModalConsultarPacientes onFechar={() => setModalConsultarAberto(false)} />
