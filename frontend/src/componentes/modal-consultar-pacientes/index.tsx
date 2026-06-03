@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './modal-consultar-pacientes-estilos.css'
+import { formatarCPF, limparFormatacao } from '../../utils/mascaras'
 
 type Etapa = 'busca' | 'perfil' | 'novo-prontuario'
 
@@ -78,7 +79,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
             const response = await fetch('/api/paciente/buscar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cpf })
+                body: JSON.stringify({ cpf: limparFormatacao(cpf) })
             })
             const data = await response.json()
             if (data.found) {
@@ -202,8 +203,9 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                 type="text"
                                 placeholder="000.000.000-00"
                                 value={cpf}
-                                onChange={(e) => setCpf(e.target.value)}
+                                onChange={(e) => setCpf(formatarCPF(e.target.value))}
                                 onKeyDown={(e) => e.key === 'Enter' && buscarPaciente()}
+                                maxLength={14}
                             />
                             <button className='botao-buscar' onClick={buscarPaciente} disabled={loading}>
                                 {loading ? 'Buscando...' : 'Buscar'}

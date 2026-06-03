@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './modal-pacientes-estilos.css'
+import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
 
 interface Props {
     onFechar: () => void
@@ -64,10 +65,10 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     nome,
-                    cpf,
+                    cpf: limparFormatacao(cpf),
                     sexo: genero,
                     data_nascimento: dataNascimento,
-                    telefone,
+                    telefone: limparFormatacao(telefone),
                     email
                 })
             })
@@ -156,12 +157,26 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             <h3 className='ms-secao-titulo'>Dados Básicos</h3>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Nome completo</label>
-                                <input className='ms-input' type="text" placeholder="Digite o nome completo" value={nome} onChange={e => setNome(e.target.value)} />
+                                <input 
+                                    className='ms-input' 
+                                    type="text" 
+                                    placeholder="Digite o nome completo" 
+                                    value={nome} 
+                                    onChange={e => setNome(e.target.value)} 
+                                    maxLength={150}
+                                />
                             </div>
                             <div className='ms-linha-dupla'>
                                 <div className='ms-campo'>
                                     <label className='ms-label'>CPF</label>
-                                    <input className='ms-input' type="text" placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} />
+                                    <input 
+                                        className='ms-input' 
+                                        type="text" 
+                                        placeholder="000.000.000-00" 
+                                        value={cpf} 
+                                        onChange={e => setCpf(formatarCPF(e.target.value))} 
+                                        maxLength={14}
+                                    />
                                 </div>
                                 <div className='ms-campo'>
                                     <label className='ms-label'>Data de nascimento</label>
@@ -186,7 +201,14 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             <div className='ms-linha-dupla'>
                                 <div className='ms-campo'>
                                     <label className='ms-label'>Telefone</label>
-                                    <input className='ms-input' type="text" placeholder="(00) 00000-0000" value={telefone} onChange={e => setTelefone(e.target.value)} />
+                                    <input 
+                                        className='ms-input' 
+                                        type="text" 
+                                        placeholder="(00) 00000-0000" 
+                                        value={telefone} 
+                                        onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                                        maxLength={15}
+                                    />
                                 </div>
                                 <div className='ms-campo'>
                                     <label className='ms-label'>E-mail</label>
