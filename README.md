@@ -18,12 +18,55 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 - **TypeScript:** Tipagem estática para maior robustez e manutenibilidade.
 
 ### **Backend (Servidor)**
-- **Python** Um único arquivo Python respon´savel pela conexão do banco de dados com o frontend da aplicação.
+- **FastAPI (Python):** Framework moderno e de alta performance para construção de APIs.
+- **SQLAlchemy:** ORM para comunicação segura com o banco de dados MySQL.
 
-### **Infraestrutura & Banco**
-- **MySQL 8.0:** Banco de dados relacional para persistência de dados.
-- **Docker & Docker Compose:** Containerização do banco para garantir paridade de ambiente.
-- **Railway:** Infraestrutura de Cloud sugerida para deploy.
+---
+
+## 🚀 Guia de Instalação e Execução
+
+### 1. Preparando o Ambiente
+
+Clone o repositório:
+```bash
+git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
+cd projeto-de-extensao-sindrome_do_x_fragil
+```
+
+Configure as credenciais:
+Copie o arquivo de exemplo e preencha com suas senhas locais:
+```bash
+cp .env.example .env
+```
+
+### 2. Instalação e Execução
+
+#### **Backend (Python)**
+1. Certifique-se de ter o Python instalado.
+2. Instale as dependências necessárias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Inicie o servidor:
+   ```bash
+   uvicorn main:app --reload
+   ```
+   *O backend estará disponível em `http://localhost:8000`.*
+
+#### **Frontend (React)**
+1. Navegue até a pasta do frontend:
+   ```bash
+   cd frontend
+   ```
+2. Instale as dependências do Node:
+   ```bash
+   npm install
+   ```
+3. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+   *O frontend estará disponível em `http://localhost:5173`.*
 
 ---
 
@@ -44,37 +87,7 @@ projeto-de-extensao-sindrome_do_x_fragil/
 
 ---
 
-## 🚀 Guia de Contribuição
-
-Para manter a integridade do código e a organização do projeto, siga os passos abaixo para contribuir:
-### 1. Preparando o Ambiente
-
-Clone o repositório:
-Bash
-
-```
-git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
-cd projeto-de-extensao-sindrome_do_x_fragil
-```
-
-Configure as credenciais:
-Copie o arquivo de exemplo e preencha com suas senhas locais:
-Bash
-
-```
-cp .env.example .env
-```
-
-Instale as dependências do Frontend:
-Bash
-
-```
-cd frontend
-npm install
-cd ..
-```
-
-### 2. Fluxo de Desenvolvimento (Git Flow)
+## 2. Fluxo de Desenvolvimento (Git Flow)
 
 Crie uma Branch: Nunca trabalhe diretamente na main. Use nomes descritivos:
 
