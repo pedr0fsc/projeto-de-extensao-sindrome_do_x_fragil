@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
 
@@ -53,6 +54,8 @@ class Usuario(Base):
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
     tipo = Column(SQLEnum("Médico", "Administrador"), nullable=False)
+    token_recuperacao = Column(String(100), unique=True)
+    token_expiracao = Column(DateTime)
     criado_em = Column(DateTime, default=datetime.now)
 
 
@@ -252,6 +255,50 @@ async def api_check(request: Request):
     if request.session.get("user_logged_in"):
         return {"logged_in": True, "tipo": request.session.get("tipo"), "nome": request.session.get("nome_usuario")}
     return {"logged_in": False}
+
+
+@app.post("/api/password-reset/request")
+async def api_password_reset_request(request: Request, db=Depends(get_db)):
+    body = await request.json()
+    email_ou_cpf = body.get("login")
+    user = db.query(Usuario).filter(
+        (Usuario.email == email_ou_cpf) | (Usuario.cpf == email_ou_cpf.replace(".", "").replace("-", ""))
+    ).first()
+    
+    if not user:
+        return {"success": True}
+
+    token = secrets.token_urlsafe(32)
+    user.token_recuperacao = token
+    user.token_expiracao = datetime.now() + timedelta(hours=1)
+    db.commit()
+
+    link = f"http://{request.url.host}:{request.url.port}/recuperar-senha?token={token}"
+    print(f"[EMAIL RECUPERAÇÃO] Para: {user.email} - Link: {link}")
+    
+    return {"success": True}
+
+
+@app.post("/api/password-reset/reset")
+async def api_password_reset_reset(request: Request, db=Depends(get_db)):
+    body = await request.json()
+    token = body.get("token")
+    nova_senha = body.get("senha")
+    
+    user = db.query(Usuario).filter(
+        Usuario.token_recuperacao == token,
+        Usuario.token_expiracao > datetime.now()
+    ).first()
+    
+    if not user:
+        return {"success": False, "error": "Token inválido ou expirado"}
+    
+    user.senha = hash_senha(nova_senha)
+    user.token_recuperacao = None
+    user.token_expiracao = None
+    db.commit()
+    
+    return {"success": True}
 
 
 @app.get("/api/sintomas")

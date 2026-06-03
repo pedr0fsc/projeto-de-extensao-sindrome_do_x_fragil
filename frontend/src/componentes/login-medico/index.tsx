@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './login-medico-estilos.css'
+import { ModalSolicitarRecuperacao } from '../modal-recuperar-senha'
 
 export function LoginMedico() {
     const navigate = useNavigate()
     const [login, setLogin] = useState('')
     const [senha, setSenha] = useState('')
+    const [modalRecuperarAberto, setModalRecuperarAberto] = useState(false)
     const [erro, setErro] = useState('')
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -64,10 +66,20 @@ export function LoginMedico() {
                         onChange={(e) => setSenha(e.target.value)}
                         required
                     />
-                    <a href="#" className='form-esqueceu'>Esqueceu sua senha?</a>
+                    <a 
+                        href="#" 
+                        className='form-esqueceu'
+                        onClick={(e) => { e.preventDefault(); setModalRecuperarAberto(true); }}
+                    >
+                        Esqueceu sua senha?
+                    </a>
                 </div>
                 <button type="submit" className='form-btn-entrar'>ENTRAR</button>
             </form>
+
+            {modalRecuperarAberto && (
+                <ModalSolicitarRecuperacao onFechar={() => setModalRecuperarAberto(false)} />
+            )}
         </div>
     )
 }
