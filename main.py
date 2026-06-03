@@ -401,7 +401,7 @@ async def api_triagem(request: Request, db=Depends(get_db), _=Depends(require_au
     }
 
 
-@app.post("/api/triagem/imprimir/{triagem_id}")
+@app.get("/api/triagem/imprimir/{triagem_id}")
 async def api_imprimir(triagem_id: int, db=Depends(get_db), _=Depends(require_auth)):
     resultado = db.query(Resultado).filter(Resultado.id_triagem == triagem_id).first()
     triagem = db.query(Triagem).filter(Triagem.id == triagem_id).first()
@@ -451,8 +451,14 @@ async def api_historico(paciente_id: int, db=Depends(get_db), _=Depends(require_
 
 
 @app.get("/api/relatorios")
-async def api_relatorios(db=Depends(get_db), _=Depends(require_admin)):
-    resultados = db.query(Resultado).all()
+async def api_relatorios(request: Request, db=Depends(get_db), _=Depends(require_auth)):
+    is_admin = request.session.get("tipo") == "Administrador"
+    if is_admin:
+        resultados = db.query(Resultado).all()
+    else:
+        # Médicos veem apenas as triagens que eles realizaram
+        resultados = db.query(Resultado).join(Triagem).filter(Triagem.id_medico == request.session.get("id_usuario")).all()
+    
     data = []
     for r in resultados:
         triagem = r.triagem
