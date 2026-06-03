@@ -22,6 +22,7 @@ CREATE TABLE paciente(
 	id INT AUTO_INCREMENT PRIMARY KEY,
     id_medico_que_cadastrou INT NOT NULL,
     nome VARCHAR(150) NOT NULL,
+    cpf VARCHAR(14) NOT NULL UNIQUE,
     sexo ENUM('Feminino', 'Masculino') NOT NULL,
     data_nascimento DATE NOT NULL,
 	telefone VARCHAR(24) NOT NULL,
