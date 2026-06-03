@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './modal-cadastrar-medico-estilos.css'
+import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
 
 interface Props {
     onFechar: () => void
@@ -24,9 +25,9 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                 body: JSON.stringify({
                     nome,
                     email,
-                    cpf,
+                    cpf: limparFormatacao(cpf),
                     senha,
-                    telefone,
+                    telefone: limparFormatacao(telefone),
                     tipo,
                     crm: tipo === 'Médico' ? crm : undefined
                 })
@@ -67,7 +68,13 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>CPF</label>
-                            <input type="text" value={cpf} onChange={e => setCpf(e.target.value)} />
+                            <input 
+                                type="text" 
+                                value={cpf} 
+                                onChange={e => setCpf(formatarCPF(e.target.value))} 
+                                maxLength={14}
+                                placeholder="000.000.000-00"
+                            />
                         </div>
                         <div className='form-campo'>
                             <label>Senha</label>
@@ -77,7 +84,13 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>Telefone</label>
-                            <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} />
+                            <input 
+                                type="text" 
+                                value={telefone} 
+                                onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                                maxLength={15}
+                                placeholder="(00) 00000-0000"
+                            />
                         </div>
                         <div className='form-campo'>
                             <label>Tipo</label>
@@ -90,7 +103,12 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
-                            <input type="text" value={crm} onChange={e => setCrm(e.target.value)} />
+                            <input 
+                                type="text" 
+                                value={crm} 
+                                onChange={e => setCrm(e.target.value)} 
+                                maxLength={10}
+                            />
                         </div>
                     )}
                 </div>
