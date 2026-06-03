@@ -14,8 +14,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Home />} />
         <Route path="/login-medicos" element={<LoginMedicos />} />
-        <Route path="/pagina-medicos" element={<PaginaMedicos />} />
-        <Route path="/pagina-administrador" element={<PaginaAdministrador />} />
+        <Route path="/medicos" element={<PaginaMedicos />} />
+        <Route path="/administrador" element={<PaginaAdministrador />} />
         <Route path="*" element={<NaoEncontrado />} />
       </Routes>
     </BrowserRouter>
