@@ -531,10 +531,10 @@ async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(requ
 
 @app.get("/api/medicos")
 async def api_medicos(db=Depends(get_db)):
+    medicos = db.query(Medico).join(Usuario).filter(Usuario.ativo == True).all()
     return [
         {"id": m.id, "nome": m.usuario.nome, "crm": m.crm}
-        for m in db.query(Medico).all()
-        if m.usuario
+        for m in medicos
     ]
 
 
