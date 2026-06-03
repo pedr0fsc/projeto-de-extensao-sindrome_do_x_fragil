@@ -1,0 +1,44 @@
+.modal-recuperar {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.modal-recuperar h2 {
+    margin: 0 0 16px 0;
+    color: var(--cor-primaria);
+}
+
+.modal-recuperar p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.mensagem-sucesso {
+    text-align: center;
+}
+
+.btn-enviar, .btn-voltar {
+    width: 100%;
+    padding: 12px;
+    background: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-enviar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-enviar:hover {
+    opacity: 0.9;
+}

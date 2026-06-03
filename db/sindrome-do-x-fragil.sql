@@ -6,11 +6,13 @@ CREATE TABLE usuario(
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    ativo BOOLEAN NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
     tipo ENUM('Médico','Administrador') NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    token_recuperacao VARCHAR(100) UNIQUE,
+    token_expiracao DATETIME,
+	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE medico(
 	id INT PRIMARY KEY, 

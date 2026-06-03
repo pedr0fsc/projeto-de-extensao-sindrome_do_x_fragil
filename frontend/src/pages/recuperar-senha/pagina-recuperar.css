@@ -1,0 +1,44 @@
+.reset-layout {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f7f6;
+}
+
+.reset-box {
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.reset-box h2 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.reset-box p {
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.btn-reset {
+    width: 100%;
+    padding: 12px;
+    background: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+}
+
+.erro-msg {
+    color: #ff6b6b;
+    font-size: 13px;
+    margin-top: 8px;
+}
