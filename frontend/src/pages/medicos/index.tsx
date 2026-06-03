@@ -1,15 +1,16 @@
 import './pagina-medicos.css'
 import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
+import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import dashboardImg from '../../assets/dashboard.png'
 import pacienteImg from '../../assets/paciente.png'
 import medicoImg from '../../assets/medico.png'
 import lupaImg from '../../assets/lupa.png'
-import lixeiraImg from '../../assets/lixeira-de-reciclagem.png'
 import pincelImg from '../../assets/pincel.png'
 import { gerarPdfConsulta } from '../../utils/gerarPDF'
+import { formatarCPF } from '../../utils/mascaras'
 
 type Visao = 'dashboard' | 'pacientes'
 
@@ -48,6 +49,7 @@ export function PaginaMedicos() {
     const [visao, setVisao] = useState<Visao>('dashboard')
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
     const [modalConsultarAberto, setModalConsultarAberto] = useState(false)
+    const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
     const [pacientes, setPacientes] = useState<Paciente[]>([])
     const [consultasRecentes, setConsultasRecentes] = useState<ConsultaRecente[]>([])
     const [stats, setStats] = useState({
@@ -59,37 +61,37 @@ export function PaginaMedicos() {
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true)
-            try {
-                const [resPacientes, resRelatorios] = await Promise.all([
-                    fetch('/api/pacientes'),
-                    fetch('/api/relatorios')
-                ])
+    const fetchData = async () => {
+        setLoading(true)
+        try {
+            const [resPacientes, resRelatorios] = await Promise.all([
+                fetch('/api/pacientes'),
+                fetch('/api/relatorios')
+            ])
 
-                if (resPacientes.ok) {
-                    const data = await resPacientes.json()
-                    setPacientes(data)
-                }
-
-                if (resRelatorios.ok) {
-                    const data = await resRelatorios.json()
-                    setConsultasRecentes(data.relatorios || [])
-                    setStats({
-                        totalPacientes: data.total || 0,
-                        consultasMes: data.total || 0, // Simplified for now
-                        encaminhados: data.encaminhados || 0,
-                        novosPacientes: data.total || 0 // Simplified for now
-                    })
-                }
-            } catch (err) {
-                console.error("Erro ao carregar dados:", err)
-            } finally {
-                setLoading(false)
+            if (resPacientes.ok) {
+                const data = await resPacientes.json()
+                setPacientes(data)
             }
-        }
 
+            if (resRelatorios.ok) {
+                const data = await resRelatorios.json()
+                setConsultasRecentes(data.relatorios || [])
+                setStats({
+                    totalPacientes: data.total || 0,
+                    consultasMes: data.total || 0, // Simplified for now
+                    encaminhados: data.encaminhados || 0,
+                    novosPacientes: data.total || 0 // Simplified for now
+                })
+            }
+        } catch (err) {
+            console.error("Erro ao carregar dados:", err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
         fetchData()
     }, [])
 
@@ -262,11 +264,12 @@ export function PaginaMedicos() {
                                                 <td>{calcularIdade(p.data_nascimento)} anos</td>
                                                 <td>{p.sexo}</td>
                                                 <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
-                                                <td>{p.cpf}</td>
+                                                <td>{formatarCPF(p.cpf)}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-tabela'><img src={lixeiraImg} alt="Excluir" /></button>
-                                                        <button className='btn-tabela'><img src={pincelImg} alt="Editar" /></button>
+                                                        <button className='btn-tabela' onClick={() => setPacienteParaEditar(p)}>
+                                                            <img src={pincelImg} alt="Editar" />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -282,11 +285,19 @@ export function PaginaMedicos() {
             {modalCadastrarAberto && (
                 <ModalCadastrarPaciente onFechar={() => {
                     setModalCadastrarAberto(false)
-                    window.location.reload() // Simple way to refresh data
+                    fetchData()
                 }} />
             )}
             {modalConsultarAberto && (
                 <ModalConsultarPacientes onFechar={() => setModalConsultarAberto(false)} />
+            )}
+
+            {pacienteParaEditar && (
+                <ModalEditarPaciente 
+                    paciente={pacienteParaEditar} 
+                    onFechar={() => setPacienteParaEditar(null)}
+                    onSucesso={fetchData}
+                />
             )}
 
             {import.meta.env.DEV && (

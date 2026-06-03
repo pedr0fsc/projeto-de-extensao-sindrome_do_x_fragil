@@ -1,13 +1,15 @@
 import './administrador-estilos.css'
 import { useState, useEffect } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
+import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
+import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
 import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
 import pacienteImg from '../../assets/paciente.png'
 import administradorImg from '../../assets/administrador.png'
 import lupaImg from '../../assets/lupa.png'
-import lixeiraImg from '../../assets/lixeira-de-reciclagem.png'
 import pincelImg from '../../assets/pincel.png'
+import { formatarCPF } from '../../utils/mascaras'
 
 type Visao = 'dashboard' | 'medicos' | 'pacientes'
 
@@ -15,6 +17,10 @@ interface Medico {
     id: number
     nome: string
     crm: string
+    email: string
+    cpf: string
+    telefone: string
+    tipo: string
 }
 
 interface Paciente {
@@ -50,6 +56,8 @@ function calcularIdade(dataNascimento: string) {
 
 export function PaginaAdministrador() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
+    const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null)
+    const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
     const [visao, setVisao] = useState<Visao>('dashboard')
     const [medicos, setMedicos] = useState<Medico[]>([])
     const [pacientes, setPacientes] = useState<Paciente[]>([])
@@ -62,35 +70,36 @@ export function PaginaAdministrador() {
     })
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true)
-            try {
-                const [resMedicos, resPacientes, resRelatorios] = await Promise.all([
-                    fetch('/api/medicos'),
-                    fetch('/api/pacientes'),
-                    fetch('/api/relatorios')
-                ])
+    const fetchData = async () => {
+        setLoading(true)
+        try {
+            const [resMedicos, resPacientes, resRelatorios] = await Promise.all([
+                fetch('/api/medicos'),
+                fetch('/api/pacientes'),
+                fetch('/api/relatorios')
+            ])
 
-                const dataMedicos = await resMedicos.json()
-                const dataPacientes = await resPacientes.json()
-                const dataRelatorios = await resRelatorios.json()
+            const dataMedicos = await resMedicos.json()
+            const dataPacientes = await resPacientes.json()
+            const dataRelatorios = await resRelatorios.json()
 
-                setMedicos(dataMedicos || [])
-                setPacientes(dataPacientes || [])
-                setRelatorios(dataRelatorios.relatorios || [])
-                setStats({
-                    totalMedicos: dataMedicos.length || 0,
-                    totalPacientes: dataPacientes.length || 0,
-                    totalTriagens: dataRelatorios.total || 0,
-                    encaminhados: dataRelatorios.encaminhados || 0
-                })
-            } catch (err) {
-                console.error("Erro ao carregar dados admin:", err)
-            } finally {
-                setLoading(false)
-            }
+            setMedicos(dataMedicos || [])
+            setPacientes(dataPacientes || [])
+            setRelatorios(dataRelatorios.relatorios || [])
+            setStats({
+                totalMedicos: dataMedicos.length || 0,
+                totalPacientes: dataPacientes.length || 0,
+                totalTriagens: dataRelatorios.total || 0,
+                encaminhados: dataRelatorios.encaminhados || 0
+            })
+        } catch (err) {
+            console.error("Erro ao carregar dados admin:", err)
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchData()
     }, [])
 
@@ -239,7 +248,7 @@ export function PaginaAdministrador() {
                             <div className='admin-filtros-header'>
                                 <h2>Filtros:</h2>
                                 <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
-                                    + Inserir médico
+                                    + Inserir usuário
                                 </button>
                             </div>
                             <div className='admin-filtros'>
@@ -247,12 +256,13 @@ export function PaginaAdministrador() {
                                 <button className='filtro-chip'>CRM</button>
                             </div>
                             <div className='admin-tabela-container'>
-                                <h3>Lista de médicos:</h3>
+                                <h3>Lista de usuários:</h3>
                                 <table className='admin-tabela'>
                                     <thead>
                                         <tr>
                                             <th>Nome</th>
-                                            <th>CRM</th>
+                                            <th>Tipo</th>
+                                            <th>CRM (se médico)</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
@@ -260,11 +270,13 @@ export function PaginaAdministrador() {
                                         {medicos.map((m, i) => (
                                             <tr key={i}>
                                                 <td>{m.nome}</td>
-                                                <td>{m.crm}</td>
+                                                <td>{m.tipo}</td>
+                                                <td>{m.crm || '-'}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-acao'><img src={lixeiraImg} alt="Excluir" /></button>
-                                                        <button className='btn-acao'><img src={pincelImg} alt="Editar" /></button>
+                                                        <button className='btn-acao' onClick={() => setMedicoParaEditar(m)}>
+                                                            <img src={pincelImg} alt="Editar" />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -305,11 +317,12 @@ export function PaginaAdministrador() {
                                                 <td>{calcularIdade(p.data_nascimento)} anos</td>
                                                 <td>{p.sexo}</td>
                                                 <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
-                                                <td>{p.cpf}</td>
+                                                <td>{formatarCPF(p.cpf)}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-acao'><img src={lixeiraImg} alt="Excluir" /></button>
-                                                        <button className='btn-acao'><img src={pincelImg} alt="Editar" /></button>
+                                                        <button className='btn-acao' onClick={() => setPacienteParaEditar(p)}>
+                                                            <img src={pincelImg} alt="Editar" />
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -325,8 +338,24 @@ export function PaginaAdministrador() {
             {modalCadastrarAberto && (
                 <ModalCadastrarMedico onFechar={() => {
                     setModalCadastrarAberto(false)
-                    window.location.reload()
+                    fetchData()
                 }} />
+            )}
+
+            {medicoParaEditar && (
+                <ModalEditarUsuario 
+                    usuario={medicoParaEditar} 
+                    onFechar={() => setMedicoParaEditar(null)}
+                    onSucesso={fetchData}
+                />
+            )}
+
+            {pacienteParaEditar && (
+                <ModalEditarPaciente 
+                    paciente={pacienteParaEditar} 
+                    onFechar={() => setPacienteParaEditar(null)}
+                    onSucesso={fetchData}
+                />
             )}
         </div>
     )

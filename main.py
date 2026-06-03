@@ -516,6 +516,56 @@ async def api_criar_usuario(request: Request, db=Depends(get_db), _=Depends(requ
     return {"success": True, "id": novo.id}
 
 
+@app.put("/api/usuario/{id}")
+async def api_atualizar_usuario(id: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()
+    user = db.query(Usuario).filter(Usuario.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
+    user.nome = body["nome"]
+    user.email = body["email"]
+    user.cpf = body["cpf"].replace(".", "").replace("-", "")
+    user.telefone = body["telefone"].replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
+    user.tipo = body["tipo"]
+    
+    if body.get("senha"):
+        user.senha = hash_senha(body["senha"])
+        
+    if user.tipo == "Médico" and body.get("crm"):
+        medico = db.query(Medico).filter(Medico.id == id).first()
+        if medico:
+            medico.crm = body["crm"]
+        else:
+            db.add(Medico(id=user.id, crm=body["crm"]))
+    
+    db.commit()
+    return {"success": True}
+
+
+@app.put("/api/paciente/{id}")
+async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), _=Depends(require_auth)):
+    body = await request.json()
+    paciente = db.query(Paciente).filter(Paciente.id == id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+
+    # Check permission (only owner or admin)
+    is_admin = request.session.get("tipo") == "Administrador"
+    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+        raise HTTPException(status_code=403, detail="Sem permissão para editar este paciente")
+
+    paciente.nome = body["nome"]
+    paciente.cpf = body["cpf"].replace(".", "").replace("-", "")
+    paciente.sexo = body["sexo"]
+    paciente.data_nascimento = datetime.strptime(body["data_nascimento"], "%Y-%m-%d").date()
+    paciente.telefone = body["telefone"].replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
+    paciente.email = body["email"]
+    
+    db.commit()
+    return {"success": True}
+
+
 @app.delete("/api/usuario/{id}")
 async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_admin)):
     user = db.query(Usuario).filter(Usuario.id == id).first()
@@ -539,7 +589,15 @@ async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(requ
 async def api_medicos(db=Depends(get_db)):
     medicos = db.query(Medico).join(Usuario).filter(Usuario.ativo == True).all()
     return [
-        {"id": m.id, "nome": m.usuario.nome, "crm": m.crm}
+        {
+            "id": m.id, 
+            "nome": m.usuario.nome, 
+            "crm": m.crm,
+            "email": m.usuario.email,
+            "cpf": m.usuario.cpf,
+            "telefone": m.usuario.telefone,
+            "tipo": m.usuario.tipo
+        }
         for m in medicos
     ]
 
