@@ -58,15 +58,46 @@ export function PaginaMedicos() {
         encaminhados: 0,
         novosPacientes: 0
     })
+    const [userName, setUserName] = useState('')
     const [loading, setLoading] = useState(true)
+    const [sortField, setSortField] = useState<'nome' | 'idade' | 'sexo' | 'nascimento'>('nome')
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const navigate = useNavigate()
+
+    const sortedPacientes = [...pacientes].sort((a, b) => {
+        let valA: any = a[sortField as keyof Paciente]
+        let valB: any = b[sortField as keyof Paciente]
+
+        if (sortField === 'idade') {
+            valA = calcularIdade(a.data_nascimento)
+            valB = calcularIdade(b.data_nascimento)
+        }
+        if (sortField === 'nascimento') {
+            valA = a.data_nascimento
+            valB = b.data_nascimento
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+        return 0
+    })
+
+    const handleSort = (field: 'nome' | 'idade' | 'sexo' | 'nascimento') => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortField(field)
+            setSortOrder('asc')
+        }
+    }
 
     const fetchData = async () => {
         setLoading(true)
         try {
-            const [resPacientes, resRelatorios] = await Promise.all([
+            const [resPacientes, resRelatorios, resCheck] = await Promise.all([
                 fetch('/api/pacientes'),
-                fetch('/api/relatorios')
+                fetch('/api/relatorios'),
+                fetch('/api/check')
             ])
 
             if (resPacientes.ok) {
@@ -83,6 +114,13 @@ export function PaginaMedicos() {
                     encaminhados: data.encaminhados || 0,
                     novosPacientes: data.total || 0 // Simplified for now
                 })
+            }
+
+            if (resCheck.ok) {
+                const data = await resCheck.json()
+                if (data.logged_in) {
+                    setUserName(data.nome)
+                }
             }
         } catch (err) {
             console.error("Erro ao carregar dados:", err)
@@ -145,10 +183,13 @@ export function PaginaMedicos() {
                         <img src={lupaImg} alt="" />
                         <input type="text" placeholder="Pesquisar" />
                     </div>
-                    <button className='medico-perfil'>
-                        <img src={medicoImg} alt="" />
-                        Médico
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {userName && <span style={{ fontWeight: 500, color: '#444' }}>Bem Vindo, {userName}</span>}
+                        <button className='medico-perfil'>
+                            <img src={medicoImg} alt="" />
+                            Médico
+                        </button>
+                    </div>
                 </header>
 
                 <div className='medico-conteudo'>
@@ -238,10 +279,18 @@ export function PaginaMedicos() {
                             </div>
 
                             <div className='medico-filtros'>
-                                <button className='filtro-chip'>Nome</button>
-                                <button className='filtro-chip'>Idade</button>
-                                <button className='filtro-chip'>Sexo</button>
-                                <button className='filtro-chip'>Data de nascimento</button>
+                                <button className={`filtro-chip ${sortField === 'nome' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('nome')}>
+                                    Nome {sortField === 'nome' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </button>
+                                <button className={`filtro-chip ${sortField === 'idade' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('idade')}>
+                                    Idade {sortField === 'idade' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </button>
+                                <button className={`filtro-chip ${sortField === 'sexo' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('sexo')}>
+                                    Sexo {sortField === 'sexo' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </button>
+                                <button className={`filtro-chip ${sortField === 'nascimento' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('nascimento')}>
+                                    Data de nascimento {sortField === 'nascimento' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </button>
                             </div>
 
                             <div className='medico-tabela-container'>
@@ -258,7 +307,7 @@ export function PaginaMedicos() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {pacientes.map((p, i) => (
+                                        {sortedPacientes.map((p, i) => (
                                             <tr key={i}>
                                                 <td>{p.nome}</td>
                                                 <td>{calcularIdade(p.data_nascimento)} anos</td>
