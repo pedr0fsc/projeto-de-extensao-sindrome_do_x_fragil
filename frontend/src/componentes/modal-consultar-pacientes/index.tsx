@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import './modal-consultar-pacientes-estilos.css'
-import { gerarPdfConsulta } from '../../utils/gerarPDF'
 
 type Etapa = 'busca' | 'perfil' | 'novo-prontuario'
 
