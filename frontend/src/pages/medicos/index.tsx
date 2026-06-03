@@ -291,7 +291,7 @@ export function PaginaMedicos() {
 
             {import.meta.env.DEV && (
                 <button
-                    onClick={() => navigate('/pagina-administrador')}
+                    onClick={() => navigate('/administrador')}
                     style={{ position: 'fixed', bottom: 16, right: 16, background: '#ff6b6b', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', opacity: 0.8 }}
                 >
                     [DEV] Ir para Admin

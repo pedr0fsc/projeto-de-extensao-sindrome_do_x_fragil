@@ -27,7 +27,7 @@ export function LoginMedico() {
                 if (data.tipo === 'Administrador') {
                     navigate('/administrador')
                 } else {
-                    navigate('/pagina-medicos')
+                    navigate('/medicos')
                 }
             } else {
                 setErro(data.error || 'Erro ao realizar login')
