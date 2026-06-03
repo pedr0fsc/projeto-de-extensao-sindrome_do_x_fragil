@@ -25,7 +25,7 @@ export function LoginMedico() {
             
             if (data.success) {
                 if (data.tipo === 'Administrador') {
-                    navigate('/Administrador')
+                    navigate('/administrador')
                 } else {
                     navigate('/pagina-medicos')
                 }
