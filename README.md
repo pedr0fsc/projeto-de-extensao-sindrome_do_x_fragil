@@ -30,6 +30,9 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 Clone o repositório:
 ```bash
 git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
+```
+Entre no diretório:
+```bash
 cd projeto-de-extensao-sindrome_do_x_fragil
 ```
 
@@ -41,17 +44,6 @@ cp .env.example .env
 
 ### 2. Instalação e Execução
 
-#### **Backend (Python)**
-1. Certifique-se de ter o Python instalado.
-2. Instale as dependências necessárias:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Inicie o servidor:
-   ```bash
-   uvicorn main:app --reload
-   ```
-   *O backend estará disponível em `http://localhost:8000`.*
 
 #### **Frontend (React)**
 1. Navegue até a pasta do frontend:
@@ -62,11 +54,22 @@ cp .env.example .env
    ```bash
    npm install
    ```
-3. Inicie o servidor de desenvolvimento:
+3. Saia do diretório:
    ```bash
-   npm run dev
+   cd ..
    ```
-   *O frontend estará disponível em `http://localhost:5173`.*
+
+#### **Backend (Python)**
+1. Certifique-se de ter o Python instalado.
+2. Instale as dependências necessárias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Inicie o servidor:
+   ```bash
+   py -m uvicorn main:app --reload
+   ```
+   *O projeto estará disponível em `http://127.0.0.1:8000/`.*
 
 ---
 
