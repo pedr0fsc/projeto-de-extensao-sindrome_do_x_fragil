@@ -1,5 +1,6 @@
 import os
 import secrets
+import smtplib
 from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
@@ -7,7 +8,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -22,6 +23,7 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -173,27 +175,107 @@ def calcular_score(sintomas_marcados: dict, sexo: str, db) -> float:
     return round(score, 3)
 
 
-def enviar_email(destino: str, nome: str, score: float, recomendacao: str, limiar: float) -> bool:
-    if not destino:
+def enviar_email_smtp(to_email: str, subject: str, html_content: str, text_content: str = "") -> bool:
+    if not to_email:
         return False
+    
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = os.getenv("SMTP_PORT")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM") or smtp_user or "noreply@sxf.org"
+
+    if not smtp_host or not smtp_user or not smtp_password:
+        print("\n" + "="*80)
+        print(" [SIMULADOR DE EMAIL] SMTP não configurado no arquivo .env!")
+        print(f" Destinatário: {to_email}")
+        print(f" Assunto: {subject}")
+        print(f" Mensagem:\n{text_content or html_content[:400]}")
+        print("="*80 + "\n")
+        return True
+
     try:
-        msg = MIMEMultipart()
-        msg["Subject"] = f"Resultado Triagem SXF - {nome}"
-        msg["From"] = "triagem@ibk.org"
-        msg["To"] = destino
-        corpo = (
-            f"Paciente: {nome}\n"
-            f"Score: {score:.3f}\n"
-            f"Limiar: {limiar}\n"
-            f"Recomendação: {recomendacao}\n\n"
-            f"Instituto Buko Kaesemodel"
-        )
-        msg.attach(MIMEText(corpo, "plain"))
-        print(f"[EMAIL] {destino} - Score:{score}")
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = smtp_from
+        msg["To"] = to_email
+
+        if text_content:
+            msg.attach(MIMEText(text_content, "plain"))
+        if html_content:
+            msg.attach(MIMEText(html_content, "html"))
+
+        port = int(smtp_port) if smtp_port else 587
+        if port == 465:
+            server = smtplib.SMTP_SSL(smtp_host, port)
+        else:
+            server = smtplib.SMTP(smtp_host, port)
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+        server.login(smtp_user, smtp_password)
+        server.sendmail(smtp_from, to_email, msg.as_string())
+        server.quit()
+        print(f"[EMAIL] E-mail enviado com sucesso para: {to_email}")
         return True
     except Exception as e:
-        print(f"Erro email: {e}")
+        print(f"[EMAIL ERROR] Falha ao enviar e-mail para {to_email}: {e}")
         return False
+
+
+def enviar_email(destino: str, nome: str, score: float, recomendacao: str, limiar: float) -> bool:
+    cor_score = "#ff6b6b" if score >= limiar else "#2C6975"
+    
+    html_content = f"""
+    <div style="font-family: 'Nunito', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #CDE0C9; border-radius: 12px; background-color: #ffffff;">
+        <div style="background-color: #2C6975; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Resultado da Triagem SXF</h2>
+        </div>
+        <div style="padding: 24px; color: #323232; line-height: 1.6;">
+            <p>Prezado(a) responsável pelo paciente <strong>{nome}</strong>,</p>
+            <p>O resultado da triagem clínica para a Síndrome do X Frágil foi gerado com sucesso pelo sistema.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <tr style="background-color: #E0ECDE;">
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold;">Paciente</td>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9;">{nome}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold;">Score Clínico Obtido</td>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold; color: {cor_score};">{score:.3f}</td>
+                </tr>
+                <tr style="background-color: #E0ECDE;">
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold;">Limiar de Risco</td>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9;">{limiar}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold;">Recomendação</td>
+                    <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold; color: {cor_score};">{recomendacao}</td>
+                </tr>
+            </table>
+            
+            <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #68B2A0; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 14px; color: #555;"><strong>Nota Importante:</strong> Esta triagem clínica não é um diagnóstico definitivo. É uma ferramenta de triagem para avaliar a probabilidade e recomendar ou não a realização do exame molecular de DNA (FMR1 PCR).</p>
+            </div>
+        </div>
+        <div style="border-top: 1px solid #E0ECDE; padding: 15px; text-align: center; color: #777777; font-size: 12px;">
+            <p style="margin: 0;">Instituto Buko Kaesemodel</p>
+        </div>
+    </div>
+    """
+    
+    text_content = (
+        f"Paciente: {nome}\n"
+        f"Score: {score:.3f}\n"
+        f"Limiar: {limiar}\n"
+        f"Recomendação: {recomendacao}\n\n"
+        f"Instituto Buko Kaesemodel"
+    )
+    
+    subject = f"Resultado Triagem SXF - {nome}"
+    return enviar_email_smtp(destino, subject, html_content, text_content)
+
 
 
 def gerar_pdf(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -> BytesIO:
@@ -258,7 +340,7 @@ async def api_check(request: Request):
 
 
 @app.post("/api/password-reset/request")
-async def api_password_reset_request(request: Request, db=Depends(get_db)):
+async def api_password_reset_request(request: Request, background_tasks: BackgroundTasks, db=Depends(get_db)):
     body = await request.json()
     email_ou_cpf = body.get("login")
     user = db.query(Usuario).filter(
@@ -273,10 +355,61 @@ async def api_password_reset_request(request: Request, db=Depends(get_db)):
     user.token_expiracao = datetime.now() + timedelta(hours=1)
     db.commit()
 
-    link = f"http://{request.url.host}:{request.url.port}/recuperar-senha?token={token}"
-    print(f"[EMAIL RECUPERAÇÃO] Para: {user.email} - Link: {link}")
+    referer = request.headers.get("referer")
+    if referer:
+        from urllib.parse import urlparse
+        parsed = urlparse(referer)
+        if parsed.netloc:
+            link = f"{parsed.scheme}://{parsed.netloc}/recuperar-senha?token={token}"
+        else:
+            link = f"{request.url.scheme}://{request.url.netloc}/recuperar-senha?token={token}"
+    else:
+        link = f"{request.url.scheme}://{request.url.netloc}/recuperar-senha?token={token}"
+
+    print(f"[EMAIL RECUPERAÇÃO] Link gerado: {link}")
+
+    subject = "Recuperação de Senha - Plataforma de Triagem SXF"
     
-    return {"success": True}
+    html_content = f"""
+    <div style="font-family: 'Nunito', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #CDE0C9; border-radius: 12px; background-color: #ffffff;">
+        <div style="background-color: #2C6975; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Plataforma de Triagem SXF</h2>
+        </div>
+        <div style="padding: 24px; color: #323232; line-height: 1.6;">
+            <p>Olá, <strong>{user.nome}</strong>,</p>
+            <p>Recebemos uma solicitação para redefinir a senha da sua conta na Plataforma de Triagem Síndrome do X Frágil.</p>
+            <p>Para criar uma nova senha, clique no botão abaixo (este link é válido por 1 hora):</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{link}" style="display: inline-block; padding: 12px 30px; background-color: #68B2A0; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    Redefinir Senha
+                </a>
+            </div>
+            
+            <p style="font-size: 13px; color: #666;">Se o botão acima não funcionar, copie e cole o link a seguir no seu navegador:</p>
+            <p style="font-size: 12px; color: #2C6975; word-break: break-all; background-color: #E0ECDE; padding: 10px; border-radius: 4px;">{link}</p>
+            
+            <p style="margin-top: 30px;">Se você não solicitou essa redefinição, por favor ignore este e-mail. Sua senha permanecerá segura.</p>
+        </div>
+        <div style="border-top: 1px solid #E0ECDE; padding: 15px; text-align: center; color: #777777; font-size: 12px;">
+            <p style="margin: 0;">Instituto Buko Kaesemodel</p>
+            <p style="margin: 5px 0 0 0;">Este é um e-mail automático, por favor não responda.</p>
+        </div>
+    </div>
+    """
+    
+    text_content = (
+        f"Olá, {user.nome},\n\n"
+        f"Recebemos uma solicitação para redefinir a senha da sua conta na Plataforma de Triagem Síndrome do X Frágil.\n\n"
+        f"Para redefinir sua senha, acesse o link abaixo (válido por 1 hora):\n"
+        f"{link}\n\n"
+        f"Se você não solicitou essa redefinição, ignore este e-mail.\n\n"
+        f"Instituto Buko Kaesemodel"
+    )
+
+    background_tasks.add_task(enviar_email_smtp, user.email, subject, html_content, text_content)
+    
+    return {"success": True, "link": link}
 
 
 @app.post("/api/password-reset/reset")

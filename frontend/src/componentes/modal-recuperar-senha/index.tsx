@@ -9,6 +9,7 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
     const [login, setLogin] = useState('')
     const [loading, setLoading] = useState(false)
     const [sucesso, setSucesso] = useState(false)
+    const [devLink, setDevLink] = useState('')
 
     const handleSolicitar = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -22,6 +23,9 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
             const data = await response.json()
             if (data.success) {
                 setSucesso(true)
+                if (data.link) {
+                    setDevLink(data.link)
+                }
             } else {
                 alert('Erro ao solicitar recuperação')
             }
@@ -46,7 +50,31 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
                         <div className='mensagem-sucesso'>
                             <p>Se o usuário existir, um e-mail com as instruções foi enviado.</p>
                             <p>Verifique sua caixa de entrada e spam.</p>
-                            <button className='btn-voltar' onClick={onFechar}>Voltar ao Login</button>
+                            
+                            {devLink && (
+                                <div style={{ 
+                                    marginTop: '15px', 
+                                    padding: '12px', 
+                                    background: 'var(--cor-quaternaria)', 
+                                    borderRadius: '8px', 
+                                    border: '1px solid var(--cor-terciaria)',
+                                    textAlign: 'left'
+                                }}>
+                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--cor-primaria)', marginBottom: '5px' }}>
+                                        Link de Recuperação (Modo Teste):
+                                    </p>
+                                    <a href={devLink} target="_blank" rel="noreferrer" style={{ 
+                                        fontSize: '11px', 
+                                        color: 'var(--cor-primaria)', 
+                                        wordBreak: 'break-all',
+                                        textDecoration: 'underline'
+                                    }}>
+                                        {devLink}
+                                    </a>
+                                </div>
+                            )}
+                            
+                            <button className='btn-voltar' onClick={onFechar} style={{ marginTop: '10px' }}>Voltar ao Login</button>
                         </div>
                     ) : (
                         <form onSubmit={handleSolicitar}>
