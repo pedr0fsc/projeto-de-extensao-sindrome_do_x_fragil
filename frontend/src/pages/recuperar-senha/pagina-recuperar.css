@@ -1,44 +1,126 @@
+@import "../../variaveis.css";
+
 .reset-layout {
     height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f4f7f6;
+    background: linear-gradient(135deg, var(--cor-quaternaria) 0%, #ffffff 50%, var(--cor-terciaria) 100%);
+    font-family: "Nunito", sans-serif;
 }
 
 .reset-box {
     background: white;
-    padding: 32px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    padding: 40px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 10px 30px rgba(44, 105, 117, 0.12);
+    border: 1px solid rgba(104, 178, 160, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.4s ease;
 }
 
 .reset-box h2 {
-    margin: 0 0 8px 0;
-    color: #333;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--cor-primaria);
 }
 
 .reset-box p {
     color: #666;
-    margin-bottom: 24px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.reset-container {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fdfdfd;
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    color: #ff6b6b;
+    font-weight: 600;
 }
 
 .btn-reset {
     width: 100%;
     padding: 12px;
-    background: var(--cor-primaria);
+    background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
     color: white;
     border: none;
     border-radius: 8px;
+    font-family: "Nunito", sans-serif;
     font-weight: 600;
+    font-size: 15px;
     cursor: pointer;
-    margin-top: 16px;
+    margin-top: 24px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(44, 105, 117, 0.2);
+}
+
+.btn-reset:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(44, 105, 117, 0.3);
+    opacity: 0.95;
+}
+
+.btn-reset:active {
+    transform: translateY(0);
+}
+
+.btn-reset:disabled {
+    background: #cccccc;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .erro-msg {
     color: #ff6b6b;
     font-size: 13px;
-    margin-top: 8px;
+    margin: 0;
+    font-weight: 600;
+    text-align: center;
+}
+
+.form-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.form-campo label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.form-campo input {
+    padding: 12px;
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: #fdfdfd;
+}
+
+.form-campo input:focus {
+    outline: none;
+    border-color: var(--cor-secundaria);
+    box-shadow: 0 0 0 3px rgba(104, 178, 160, 0.15);
+    background: #ffffff;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
 }
