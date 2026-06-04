@@ -1,113 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './modal-consultar-pacientes-estilos.css'
-import { gerarPdfConsulta } from '../../utils/gerarPDF'
+import { formatarCPF, limparFormatacao } from '../../utils/mascaras'
 
 type Etapa = 'busca' | 'perfil' | 'novo-prontuario'
 
 interface ConsultaHistorico {
+    id: number
     data: string
     medico: string
+    score: number
+    recomendacao: string
     sintomas: string[]
     observacoes: string
 }
 
 interface Paciente {
+    id: number
     cpf: string
     nome: string
-    idade: number
-    genero: string
-    dataNascimento: string
-    ultimaConsulta: string
-    medico: string
-    historico: ConsultaHistorico[]
+    sexo: string
+    data_nascimento: string
+    telefone: string
+    email: string
 }
 
-const sintomasList = [
-    { label: 'Deficiência intelectual', name: 'deficiencia_intelectual' },
-    { label: 'Face alongada/orelha', name: 'face_alongada_orelha' },
-    { label: 'Macroorquidismo', name: 'macroorquidismo' },
-    { label: 'Hipermobilidade articular', name: 'hipermobilidade_articular' },
-    { label: 'Dificuldades de aprendizagem', name: 'dificuldades_aprendizagem' },
-    { label: 'Déficit de atenção', name: 'deficit_atencao' },
-    { label: 'Mov. repetitivo', name: 'movimento_repetitivo' },
-    { label: 'Atraso na fala', name: 'atraso_fala' },
-    { label: 'Hiperatividade', name: 'hiperatividade' },
-    { label: 'Evita contato visual', name: 'evita_contato_visual' },
-    { label: 'Evita contato físico', name: 'evita_contato_fisico' },
-    { label: 'Agressividade', name: 'agressividade' },
-]
+interface Sintoma {
+    id: number
+    nome: string
+}
 
-const pacientesMock: Paciente[] = [
-    {
-        cpf: '000.000.000-00',
-        nome: 'João Silva',
-        idade: 10,
-        genero: 'Masculino',
-        dataNascimento: '01/01/2016',
-        ultimaConsulta: '20/05/2026',
-        medico: 'Dr. Médico Responsável',
-        historico: [
-            {
-                data: '20/05/2026',
-                medico: 'Dr. Médico Responsável',
-                sintomas: ['Deficiência intelectual', 'Atraso na fala', 'Hiperatividade'],
-                observacoes: 'Paciente apresentou melhora no comportamento após intervenção terapêutica.',
-            },
-            {
-                data: '10/01/2026',
-                medico: 'Dr. Médico Responsável',
-                sintomas: ['Deficiência intelectual', 'Dificuldades de aprendizagem'],
-                observacoes: 'Iniciado acompanhamento fonoaudiológico semanal.',
-            },
-            {
-                data: '05/08/2025',
-                medico: 'Dr. Médico Responsável',
-                sintomas: ['Atraso na fala', 'Evita contato visual', 'Mov. repetitivo'],
-                observacoes: 'Encaminhado para avaliação neuropsicológica.',
-            },
-        ],
-    },
-    {
-        cpf: '111.111.111-11',
-        nome: 'Ana Costa',
-        idade: 8,
-        genero: 'Feminino',
-        dataNascimento: '15/03/2018',
-        ultimaConsulta: '18/05/2026',
-        medico: 'Dr. Médico Responsável',
-        historico: [
-            {
-                data: '18/05/2026',
-                medico: 'Dr. Médico Responsável',
-                sintomas: ['Hipermobilidade articular', 'Dificuldades de aprendizagem', 'Déficit de atenção'],
-                observacoes: 'Iniciado acompanhamento fonoaudiológico semanal.',
-            },
-            {
-                data: '12/11/2025',
-                medico: 'Dra. Ana Lima',
-                sintomas: ['Dificuldades de aprendizagem', 'Déficit de atenção'],
-                observacoes: 'Consulta de rotina. Sem alterações significativas.',
-            },
-        ],
-    },
-    {
-        cpf: '222.222.222-22',
-        nome: 'Pedro Lima',
-        idade: 12,
-        genero: 'Masculino',
-        dataNascimento: '22/07/2014',
-        ultimaConsulta: '15/05/2026',
-        medico: 'Dr. Médico Responsável',
-        historico: [
-            {
-                data: '15/05/2026',
-                medico: 'Dr. Médico Responsável',
-                sintomas: ['Agressividade', 'Evita contato físico'],
-                observacoes: 'Encaminhado para avaliação neuropsicológica.',
-            },
-        ],
-    },
-]
+function calcularIdade(dataNascimento: string) {
+    const hoje = new Date()
+    const nascimento = new Date(dataNascimento)
+    let idade = hoje.getFullYear() - nascimento.getFullYear()
+    const m = hoje.getMonth() - nascimento.getMonth()
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+        idade--
+    }
+    return idade
+}
 
 interface Props {
     onFechar: () => void
@@ -116,29 +47,117 @@ interface Props {
 export function ModalConsultarPacientes({ onFechar }: Props) {
     const [etapa, setEtapa] = useState<Etapa>('busca')
     const [cpf, setCpf] = useState('')
-    const [resultado, setResultado] = useState<Paciente | null | 'não encontrado'>()
-    const [sintomasMarcados, setSintomasMarcados] = useState<string[]>([])
+    const [paciente, setPaciente] = useState<Paciente | null>(null)
+    const [historico, setHistorico] = useState<ConsultaHistorico[]>([])
+    const [sintomasList, setSintomasList] = useState<Sintoma[]>([])
+    const [resultadoBusca, setResultadoBusca] = useState<'não encontrado' | 'sem acesso' | null>(null)
+    const [medicoDono, setMedicoDono] = useState('')
+    
+    // Novo Prontuário
+    const [sintomasMarcados, setSintomasMarcados] = useState<number[]>([])
     const [queixaPrincipal, setQueixaPrincipal] = useState('')
     const [diagnostico, setDiagnostico] = useState('')
     const [prescricao, setPrescricao] = useState('')
     const [observacoes, setObservacoes] = useState('')
     const [dataConsulta, setDataConsulta] = useState(new Date().toISOString().split('T')[0])
+    
+    const [loading, setLoading] = useState(false)
     const [prontuarioSalvo, setProntuarioSalvo] = useState(false)
+    const [triagemGeradaId, setTriagemGeradaId] = useState<number | null>(null)
 
-    const buscarPaciente = () => {
-        const paciente = pacientesMock.find((p) => p.cpf === cpf)
-        setResultado(paciente ?? 'não encontrado')
-        if (paciente) setEtapa('perfil')
+    useEffect(() => {
+        fetch('/api/sintomas')
+            .then(res => res.json())
+            .then(data => setSintomasList(data))
+            .catch(err => console.error("Erro ao carregar sintomas", err))
+    }, [])
+
+    const buscarPaciente = async () => {
+        setLoading(true)
+        setResultadoBusca(null)
+        try {
+            const response = await fetch('/api/paciente/buscar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf: limparFormatacao(cpf) })
+            })
+            const data = await response.json()
+            if (data.found) {
+                if (data.sem_acesso) {
+                    setResultadoBusca('sem acesso')
+                    setMedicoDono(data.medico_nome)
+                } else {
+                    setPaciente(data.paciente)
+                    fetchHistorico(data.paciente.id)
+                    setEtapa('perfil')
+                }
+            } else {
+                setResultadoBusca('não encontrado')
+            }
+        } catch (err) {
+            console.error(err)
+            alert('Erro ao buscar paciente')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const toggleSintoma = (name: string) => {
+    const fetchHistorico = async (pacienteId: number) => {
+        try {
+            const res = await fetch(`/api/historico/${pacienteId}`)
+            const data = await res.json()
+            setHistorico(data)
+        } catch (err) {
+            console.error("Erro ao carregar histórico", err)
+        }
+    }
+
+    const toggleSintoma = (id: number) => {
         setSintomasMarcados(prev =>
-            prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name]
+            prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
         )
     }
 
-    const salvarProntuario = () => {
-        setProntuarioSalvo(true)
+    const salvarProntuario = async () => {
+        if (!paciente) return
+        setLoading(true)
+        
+        const sintomasObj: Record<string, boolean> = {}
+        sintomasMarcados.forEach(id => {
+            sintomasObj[id.toString()] = true
+        })
+
+        const obsCompleta = [
+            queixaPrincipal && `Queixa: ${queixaPrincipal}`,
+            diagnostico && `Diagnóstico: ${diagnostico}`,
+            prescricao && `Prescrição: ${prescricao}`,
+            observacoes
+        ].filter(Boolean).join('\n\n')
+
+        try {
+            const response = await fetch('/api/triagem/calcular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    paciente_id: paciente.id,
+                    sintomas: sintomasObj,
+                    observacoes: obsCompleta
+                })
+            })
+            const data = await response.json()
+            if (data.triagem_id) {
+                setTriagemGeradaId(data.triagem_id)
+                setProntuarioSalvo(true)
+                fetchHistorico(paciente.id)
+            } else {
+                alert('Erro ao salvar prontuário')
+            }
+        } catch (err) {
+            console.error(err)
+            alert('Erro de conexão')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const resetFormulario = () => {
@@ -148,19 +167,15 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
         setDiagnostico('')
         setPrescricao('')
         setObservacoes('')
-        setDataConsulta(new Date().toISOString().split('T')[0])
+        setTriagemGeradaId(null)
     }
 
     const voltarParaBusca = () => {
         setEtapa('busca')
-        setResultado(undefined)
+        setPaciente(null)
         setCpf('')
+        setResultadoBusca(null)
         resetFormulario()
-    }
-
-    const iniciarNovoProntuario = () => {
-        resetFormulario()
-        setEtapa('novo-prontuario')
     }
 
     const modalClass = [
@@ -168,17 +183,6 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
         etapa === 'perfil' ? 'modal-largo' : '',
         etapa === 'novo-prontuario' ? 'modal-medio' : '',
     ].join(' ').trim()
-
-    const sintomassParaPdf = sintomasMarcados.map(
-        s => sintomasList.find(sl => sl.name === s)?.label ?? s
-    )
-
-    const obsParaPdf = [
-        queixaPrincipal && `Queixa principal: ${queixaPrincipal}`,
-        diagnostico && `Diagnóstico: ${diagnostico}`,
-        prescricao && `Prescrição: ${prescricao}`,
-        observacoes,
-    ].filter(Boolean).join('\n\n')
 
     return (
         <div className='overlay' onClick={onFechar}>
@@ -199,23 +203,31 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                 type="text"
                                 placeholder="000.000.000-00"
                                 value={cpf}
-                                onChange={(e) => setCpf(e.target.value)}
+                                onChange={(e) => setCpf(formatarCPF(e.target.value))}
                                 onKeyDown={(e) => e.key === 'Enter' && buscarPaciente()}
+                                maxLength={14}
                             />
-                            <button className='botao-buscar' onClick={buscarPaciente}>Buscar</button>
+                            <button className='botao-buscar' onClick={buscarPaciente} disabled={loading}>
+                                {loading ? 'Buscando...' : 'Buscar'}
+                            </button>
                         </div>
 
-                        {resultado === 'não encontrado' && (
+                        {resultadoBusca === 'não encontrado' && (
                             <div className='resultado-nao-encontrado'>
                                 <p>Nenhum paciente encontrado com esse CPF.</p>
-                                <button className='botao-cadastrar-novo'>+ Cadastrar novo paciente</button>
+                            </div>
+                        )}
+                        {resultadoBusca === 'sem acesso' && (
+                            <div className='resultado-nao-encontrado'>
+                                <p>Este paciente está sob os cuidados de <strong>{medicoDono}</strong>.</p>
+                                <p>Você não tem permissão para visualizar estes dados.</p>
                             </div>
                         )}
                     </>
                 )}
 
                 {/* ── ETAPA: PERFIL ─────────────────────────────────── */}
-                {etapa === 'perfil' && resultado && resultado !== 'não encontrado' && (
+                {etapa === 'perfil' && paciente && (
                     <>
                         <div className='modal-header'>
                             <div className='modal-header-nav'>
@@ -226,56 +238,41 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                         </div>
 
                         <div className='perfil-paciente'>
-                            <div className='perfil-avatar'>{resultado.nome.charAt(0)}</div>
+                            <div className='perfil-avatar'>{paciente.nome.charAt(0)}</div>
                             <div className='perfil-info'>
-                                <h3 className='perfil-nome'>{resultado.nome}</h3>
+                                <h3 className='perfil-nome'>{paciente.nome}</h3>
                                 <div className='perfil-detalhes'>
-                                    <span>CPF: {resultado.cpf}</span>
+                                    <span>CPF: {paciente.cpf}</span>
                                     <span className='perfil-sep'>·</span>
-                                    <span>{resultado.idade} anos</span>
+                                    <span>{calcularIdade(paciente.data_nascimento)} anos</span>
                                     <span className='perfil-sep'>·</span>
-                                    <span>{resultado.genero}</span>
+                                    <span>{paciente.sexo}</span>
                                     <span className='perfil-sep'>·</span>
-                                    <span>Nasc.: {resultado.dataNascimento}</span>
+                                    <span>Nasc.: {paciente.data_nascimento.split('-').reverse().join('/')}</span>
                                 </div>
-                                <span className='perfil-ultima-consulta'>
-                                    Última consulta: {resultado.ultimaConsulta}
-                                </span>
                             </div>
                         </div>
 
                         <div className='historico-header'>
                             <h3>Histórico de Consultas</h3>
-                            <button className='botao-novo-prontuario' onClick={iniciarNovoProntuario}>
+                            <button className='botao-novo-prontuario' onClick={() => { resetFormulario(); setEtapa('novo-prontuario'); }}>
                                 + Iniciar Novo Prontuário
                             </button>
                         </div>
 
                         <div className='historico-lista'>
-                            {resultado.historico.map((h, i) => (
+                            {historico.length === 0 ? <p style={{ textAlign: 'center', padding: '20px', color: '#666' }}>Nenhuma triagem realizada anteriormente.</p> : historico.map((h, i) => (
                                 <div key={i} className='historico-item'>
                                     <div className='historico-item-topo'>
                                         <div className='historico-item-data'>
                                             <span className='historico-data'>{h.data}</span>
-                                            <span className='historico-medico'>{h.medico}</span>
+                                            <span className='historico-medico'>Dr(a). {h.medico}</span>
                                         </div>
                                         <button
                                             className='botao-gerar-pdf'
-                                            onClick={() => gerarPdfConsulta({
-                                                paciente: {
-                                                    nome: resultado.nome,
-                                                    cpf: resultado.cpf,
-                                                    idade: resultado.idade,
-                                                    genero: resultado.genero,
-                                                    dataNascimento: resultado.dataNascimento,
-                                                },
-                                                consulta: {
-                                                    data: h.data,
-                                                    medico: h.medico,
-                                                    sintomas: h.sintomas,
-                                                    observacoes: h.observacoes,
-                                                },
-                                            })}
+                                            onClick={() => {
+                                                window.open(`/api/triagem/imprimir/${h.id}`, '_blank')
+                                            }}
                                         >
                                             Gerar PDF
                                         </button>
@@ -286,6 +283,9 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                         ))}
                                     </div>
                                     <p className='historico-obs'>{h.observacoes}</p>
+                                    <div style={{ marginTop: '8px', fontSize: '13px' }}>
+                                        <strong>Score:</strong> {h.score.toFixed(3)} — <em>{h.recomendacao}</em>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -293,7 +293,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                 )}
 
                 {/* ── ETAPA: NOVO PRONTUÁRIO ─────────────────────────── */}
-                {etapa === 'novo-prontuario' && resultado && resultado !== 'não encontrado' && (
+                {etapa === 'novo-prontuario' && paciente && (
                     <>
                         <div className='modal-header'>
                             <div className='modal-header-nav'>
@@ -307,25 +307,13 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                             <div className='prontuario-salvo'>
                                 <div className='prontuario-salvo-icone'>✓</div>
                                 <h3>Prontuário salvo com sucesso!</h3>
-                                <p>O prontuário de <strong>{resultado.nome}</strong> foi registrado.</p>
+                                <p>O prontuário de <strong>{paciente.nome}</strong> foi registrado.</p>
                                 <div className='prontuario-salvo-acoes'>
                                     <button
                                         className='botao-gerar-pdf'
-                                        onClick={() => gerarPdfConsulta({
-                                            paciente: {
-                                                nome: resultado.nome,
-                                                cpf: resultado.cpf,
-                                                idade: resultado.idade,
-                                                genero: resultado.genero,
-                                                dataNascimento: resultado.dataNascimento,
-                                            },
-                                            consulta: {
-                                                data: dataConsulta.split('-').reverse().join('/'),
-                                                medico: resultado.medico,
-                                                sintomas: sintomassParaPdf,
-                                                observacoes: obsParaPdf,
-                                            },
-                                        })}
+                                        onClick={() => {
+                                            if (triagemGeradaId) window.open(`/api/triagem/imprimir/${triagemGeradaId}`, '_blank')
+                                        }}
                                     >
                                         Gerar PDF da Consulta
                                     </button>
@@ -337,9 +325,9 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                         ) : (
                             <>
                                 <div className='prontuario-paciente-mini'>
-                                    <span className='prontuario-paciente-nome'>{resultado.nome}</span>
+                                    <span className='prontuario-paciente-nome'>{paciente.nome}</span>
                                     <span className='prontuario-paciente-info'>
-                                        {resultado.cpf} · {resultado.idade} anos · {resultado.genero}
+                                        {paciente.cpf} · {calcularIdade(paciente.data_nascimento)} anos · {paciente.sexo}
                                     </span>
                                 </div>
 
@@ -395,16 +383,16 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                         <div className='sintomas-grid'>
                                             {sintomasList.map(s => (
                                                 <label
-                                                    key={s.name}
-                                                    className={`sintoma-opcao ${sintomasMarcados.includes(s.name) ? 'sintoma-opcao-marcado' : ''}`}
+                                                    key={s.id}
+                                                    className={`sintoma-opcao ${sintomasMarcados.includes(s.id) ? 'sintoma-opcao-marcado' : ''}`}
                                                 >
                                                     <input
                                                         type="checkbox"
                                                         className='sintoma-check'
-                                                        checked={sintomasMarcados.includes(s.name)}
-                                                        onChange={() => toggleSintoma(s.name)}
+                                                        checked={sintomasMarcados.includes(s.id)}
+                                                        onChange={() => toggleSintoma(s.id)}
                                                     />
-                                                    {s.label}
+                                                    {s.nome}
                                                 </label>
                                             ))}
                                         </div>
@@ -432,9 +420,9 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                     <button
                                         className='botao-salvar'
                                         onClick={salvarProntuario}
-                                        disabled={!queixaPrincipal.trim()}
+                                        disabled={loading || !queixaPrincipal.trim()}
                                     >
-                                        Salvar Prontuário
+                                        {loading ? 'Salvando...' : 'Salvar Prontuário'}
                                     </button>
                                 </div>
                             </>

@@ -1,33 +1,43 @@
 import { useState } from 'react'
-import './modal-cadastrar-medico-estilos.css'
+import '../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
 
 interface Props {
+    usuario: {
+        id: number
+        nome: string
+        email: string
+        cpf: string
+        telefone: string
+        tipo: string
+        crm?: string
+    }
     onFechar: () => void
+    onSucesso: () => void
 }
 
-export function ModalCadastrarMedico({ onFechar }: Props) {
-    const [nome, setNome] = useState('')
-    const [email, setEmail] = useState('')
-    const [cpf, setCpf] = useState('')
+export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
+    const [nome, setNome] = useState(usuario.nome)
+    const [email, setEmail] = useState(usuario.email)
+    const [cpf, setCpf] = useState(formatarCPF(usuario.cpf))
     const [senha, setSenha] = useState('')
     const [mostrarSenha, setMostrarSenha] = useState(false)
-    const [telefone, setTelefone] = useState('')
-    const [crm, setCrm] = useState('')
-    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
+    const [telefone, setTelefone] = useState(formatarTelefone(usuario.telefone))
+    const [crm, setCrm] = useState(usuario.crm || '')
+    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as any)
     const [loading, setLoading] = useState(false)
 
-    const handleConcluir = async () => {
+    const handleSalvar = async () => {
         setLoading(true)
         try {
-            const response = await fetch('/api/usuario', {
-                method: 'POST',
+            const response = await fetch(`/api/usuario/${usuario.id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     nome,
                     email,
                     cpf: limparFormatacao(cpf),
-                    senha,
+                    senha: senha || undefined,
                     telefone: limparFormatacao(telefone),
                     tipo,
                     crm: tipo === 'Médico' ? crm : undefined
@@ -35,10 +45,11 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
             })
             const data = await response.json()
             if (data.success) {
-                alert('Usuário cadastrado com sucesso!')
+                alert('Usuário atualizado com sucesso!')
+                onSucesso()
                 onFechar()
             } else {
-                alert('Erro ao cadastrar: ' + (data.detail || 'Erro desconhecido'))
+                alert('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'))
             }
         } catch (err) {
             console.error(err)
@@ -53,7 +64,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
             <div className='modal' onClick={(e) => e.stopPropagation()}>
 
                 <div className='modal-header'>
-                    <h2>Adicionar {tipo}:</h2>
+                    <h2>Editar {tipo}:</h2>
                     <button className='botao-fechar' onClick={onFechar}>✕</button>
                 </div>
 
@@ -74,11 +85,10 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                 value={cpf} 
                                 onChange={e => setCpf(formatarCPF(e.target.value))} 
                                 maxLength={14}
-                                placeholder="000.000.000-00"
                             />
                         </div>
                         <div className='form-campo'>
-                            <label>Senha</label>
+                            <label>Nova Senha (deixe vazio se não quiser alterar)</label>
                             <div className='password-input-wrapper'>
                                 <input 
                                     type={mostrarSenha ? 'text' : 'password'} 
@@ -113,7 +123,6 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                 value={telefone} 
                                 onChange={e => setTelefone(formatarTelefone(e.target.value))} 
                                 maxLength={15}
-                                placeholder="(00) 00000-0000"
                             />
                         </div>
                         <div className='form-campo'>
@@ -138,8 +147,8 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                 </div>
 
                 <div className='modal-rodape'>
-                    <button className='botao-concluir' onClick={handleConcluir} disabled={loading}>
-                        {loading ? 'Salvando...' : 'Concluir'}
+                    <button className='botao-concluir' onClick={handleSalvar} disabled={loading}>
+                        {loading ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                     <button className='botao-cancelar' onClick={onFechar}>Cancelar</button>
                 </div>
@@ -148,4 +157,3 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
         </div>
     )
 }
-export default ModalCadastrarMedico

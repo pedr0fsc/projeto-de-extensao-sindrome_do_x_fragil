@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Home from '../src/pages/Home'
-import LoginMedicos from '../src/pages/Login Médicos'
-import PaginaMedicos from '../src/pages/Médicos'
-import PaginaAdministrador from '../src/pages/Administrador'
-import NaoEncontrado from '../src/pages/NaoEncontrado'
+import Home from '../src/pages/home'
+import LoginMedicos from '../src/pages/login-medicos'
+import PaginaMedicos from '../src/pages/medicos'
+import PaginaAdministrador from '../src/pages/administrador'
+import NaoEncontrado from '../src/pages/nao-encontrado'
+import PaginaResetSenha from '../src/pages/recuperar-senha'
 
 import './App.css'
 
@@ -14,8 +15,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/sobre" element={<Home />} />
         <Route path="/login-medicos" element={<LoginMedicos />} />
-        <Route path="/pagina-medicos" element={<PaginaMedicos />} />
-        <Route path="/pagina-administrador" element={<PaginaAdministrador />} />
+        <Route path="/medicos" element={<PaginaMedicos />} />
+        <Route path="/administrador" element={<PaginaAdministrador />} />
+        <Route path="/recuperar-senha" element={<PaginaResetSenha />} />
         <Route path="*" element={<NaoEncontrado />} />
       </Routes>
     </BrowserRouter>
