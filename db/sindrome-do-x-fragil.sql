@@ -1,12 +1,25 @@
 CREATE DATABASE sxf_triagem_db;
 USE sxf_triagem_db;
 
+CREATE TABLE instituicao(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome_fantasia VARCHAR(150) NOT NULL,
+    nome VARCHAR(500) NULL,
+    rua VARCHAR(150) NOT NULL,
+    numero VARCHAR(10) NOT NULL,
+    complemento VARCHAR(100) NULL,
+    bairro VARCHAR(100) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    estado CHAR(2) NOT NULL,
+    cep VARCHAR(9) NOT NULL,
+    cnpj VARCHAR(18) NOT NULL UNIQUE   
+);
+
 CREATE TABLE usuario(
 	id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
     tipo ENUM('Médico','Administrador') NOT NULL,
@@ -19,10 +32,19 @@ CREATE TABLE medico(
     crm VARCHAR(13) NOT NULL UNIQUE,
     FOREIGN KEY (id) REFERENCES usuario(id)
 );
+CREATE TABLE instituto_medico (
+    id_instituto INT NOT NULL,
+    id_medico INT NOT NULL,
+    vinculo_ativo BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY (id_instituto, id_medico),
+    FOREIGN KEY (id_instituto) REFERENCES instituicao(id),
+    FOREIGN KEY (id_medico) REFERENCES medico(id)
+);
 
 CREATE TABLE paciente(
 	id INT AUTO_INCREMENT PRIMARY KEY,
-    id_medico_que_cadastrou INT NOT NULL,
+    id_medico_responsavel INT NOT NULL,
+    id_instituto INT NOT NULL,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     sexo ENUM('Feminino', 'Masculino') NOT NULL,
@@ -30,7 +52,9 @@ CREATE TABLE paciente(
 	telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_medico_que_cadastrou)  REFERENCES medico(id)
+    FOREIGN KEY (id_medico_responsavel)  REFERENCES medico(id),
+    FOREIGN KEY (id_instituto) REFERENCES instituicao(id)
+
 );
 
 CREATE TABLE triagem(
