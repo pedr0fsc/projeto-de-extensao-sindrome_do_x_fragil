@@ -20,6 +20,7 @@ CREATE TABLE usuario(
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
     tipo ENUM('Médico','Administrador') NOT NULL,
