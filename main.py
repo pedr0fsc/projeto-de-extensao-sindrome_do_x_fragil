@@ -23,6 +23,8 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+from dotenv import load_dotenv
+load_dotenv()
 
 
 
