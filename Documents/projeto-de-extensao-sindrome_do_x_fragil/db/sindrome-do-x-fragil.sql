@@ -17,22 +17,25 @@ CREATE TABLE instituicao(
 
 CREATE TABLE usuario(
 	id INT AUTO_INCREMENT PRIMARY KEY,
+    id_instituto INT NOT NULL,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
     tipo ENUM('Médico','Administrador') NOT NULL,
     token_recuperacao VARCHAR(100) UNIQUE,
     token_expiracao DATETIME,
+    FOREIGN KEY (id_instituto) REFERENCES instituicao(id),
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE medico(
 	id INT PRIMARY KEY, 
     crm VARCHAR(13) NOT NULL UNIQUE,
     FOREIGN KEY (id) REFERENCES usuario(id)
 );
+
 CREATE TABLE instituto_medico (
     id_instituto INT NOT NULL,
     id_medico INT NOT NULL,
