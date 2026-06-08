@@ -2,17 +2,19 @@ import './pagina-medicos.css'
 import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import dashboardImg from '../../assets/dashboard.png'
 import pacienteImg from '../../assets/paciente.png'
 import medicoImg from '../../assets/medico.png'
-import lupaImg from '../../assets/lupa.png'
 import pincelImg from '../../assets/pincel.png'
 import { gerarPdfConsulta } from '../../utils/gerarPDF'
 import { formatarCPF } from '../../utils/mascaras'
+import { SearchBar } from '../../componentes/search-bar'
 
 type Visao = 'dashboard' | 'pacientes'
+type SortField = 'nome' | 'idade' | 'sexo' | 'nascimento'
+type SortOrder = 'asc' | 'desc'
 
 interface Paciente {
     id: number
@@ -34,7 +36,7 @@ interface ConsultaRecente {
     atingiu_limiar: boolean
 }
 
-function calcularIdade(dataNascimento: string) {
+function calcularIdade(dataNascimento: string): number {
     const hoje = new Date()
     const nascimento = new Date(dataNascimento)
     let idade = hoje.getFullYear() - nascimento.getFullYear()
@@ -45,6 +47,34 @@ function calcularIdade(dataNascimento: string) {
     return idade
 }
 
+// ─── Sort chip row ────────────────────────────────────────────────────────────
+interface SortChipsProps<T extends string> {
+    chips: { label: string; value: T }[]
+    active: T
+    order: SortOrder
+    onSort: (field: T) => void
+}
+
+function SortChips<T extends string>({ chips, active, order, onSort }: SortChipsProps<T>) {
+    return (
+        <div className='medico-filtros'>
+            {chips.map(chip => (
+                <button
+                    key={chip.value}
+                    className={`filtro-chip ${active === chip.value ? 'filtro-chip-ativo' : ''}`}
+                    onClick={() => onSort(chip.value)}
+                >
+                    {chip.label}
+                    {active === chip.value && (
+                        <span className='filtro-chip-seta'>{order === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                </button>
+            ))}
+        </div>
+    )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export function PaginaMedicos() {
     const [visao, setVisao] = useState<Visao>('dashboard')
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
@@ -56,82 +86,117 @@ export function PaginaMedicos() {
         totalPacientes: 0,
         consultasMes: 0,
         encaminhados: 0,
-        novosPacientes: 0
+        novosPacientes: 0,
     })
     const [userName, setUserName] = useState('')
     const [loading, setLoading] = useState(true)
-    const [sortField, setSortField] = useState<'nome' | 'idade' | 'sexo' | 'nascimento'>('nome')
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
+    // Search term is scoped per view so switching tabs never bleeds state
+    const [searchDashboard, setSearchDashboard] = useState('')
+    const [searchPacientes, setSearchPacientes] = useState('')
+
+    const [sortField, setSortField] = useState<SortField>('nome')
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
     const navigate = useNavigate()
 
-    const sortedPacientes = [...pacientes].sort((a, b) => {
-        let valA: any = a[sortField as keyof Paciente]
-        let valB: any = b[sortField as keyof Paciente]
-
-        if (sortField === 'idade') {
-            valA = calcularIdade(a.data_nascimento)
-            valB = calcularIdade(b.data_nascimento)
-        }
-        if (sortField === 'nascimento') {
-            valA = a.data_nascimento
-            valB = b.data_nascimento
-        }
-
-        if (valA < valB) return sortOrder === 'asc' ? -1 : 1
-        if (valA > valB) return sortOrder === 'asc' ? 1 : -1
-        return 0
-    })
-
-    const handleSort = (field: 'nome' | 'idade' | 'sexo' | 'nascimento') => {
+    const handleSort = (field: SortField) => {
         if (sortField === field) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortField(field)
             setSortOrder('asc')
         }
     }
 
+    // ── Filtered + sorted lists ──────────────────────────────────────────────
+    const filteredConsultas = useMemo(() => {
+        const term = searchDashboard.toLowerCase()
+        if (!term) return consultasRecentes
+        return consultasRecentes.filter(c =>
+            c.paciente.toLowerCase().includes(term) ||
+            c.sexo.toLowerCase().includes(term) ||
+            c.data.includes(term) ||
+            c.score.toString().includes(term) ||
+            c.medico.toLowerCase().includes(term) ||
+            c.recomendacao.toLowerCase().includes(term)
+        )
+    }, [consultasRecentes, searchDashboard])
+
+    const sortedPacientes = useMemo(() => {
+        const term = searchPacientes.toLowerCase()
+        const filtered = term
+            ? pacientes.filter(p =>
+                p.nome.toLowerCase().includes(term) ||
+                p.cpf.includes(term) ||
+                formatarCPF(p.cpf).includes(term) ||
+                p.email.toLowerCase().includes(term) ||
+                p.telefone.includes(term) ||
+                p.sexo.toLowerCase().includes(term) ||
+                calcularIdade(p.data_nascimento).toString().includes(term) ||
+                p.data_nascimento.includes(term) ||
+                p.data_nascimento.split('-').reverse().join('/').includes(term)
+            )
+            : [...pacientes]
+
+        return filtered.sort((a, b) => {
+            let valA: string | number
+            let valB: string | number
+
+            if (sortField === 'idade') {
+                valA = calcularIdade(a.data_nascimento)
+                valB = calcularIdade(b.data_nascimento)
+            } else if (sortField === 'nascimento') {
+                valA = a.data_nascimento
+                valB = b.data_nascimento
+            } else if (sortField === 'sexo') {
+                valA = a.sexo
+                valB = b.sexo
+            } else {
+                valA = a.nome
+                valB = b.nome
+            }
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+            return 0
+        })
+    }, [pacientes, searchPacientes, sortField, sortOrder])
+
+    // ── Data fetching ────────────────────────────────────────────────────────
     const fetchData = async () => {
         setLoading(true)
         try {
             const [resPacientes, resRelatorios, resCheck] = await Promise.all([
                 fetch('/api/pacientes'),
                 fetch('/api/relatorios'),
-                fetch('/api/check')
+                fetch('/api/check'),
             ])
 
-            if (resPacientes.ok) {
-                const data = await resPacientes.json()
-                setPacientes(data)
-            }
+            if (resPacientes.ok) setPacientes(await resPacientes.json())
 
             if (resRelatorios.ok) {
                 const data = await resRelatorios.json()
                 setConsultasRecentes(data.relatorios || [])
                 setStats({
                     totalPacientes: data.total || 0,
-                    consultasMes: data.total || 0, // Simplified for now
+                    consultasMes: data.total || 0,
                     encaminhados: data.encaminhados || 0,
-                    novosPacientes: data.total || 0 // Simplified for now
+                    novosPacientes: data.total || 0,
                 })
             }
 
             if (resCheck.ok) {
                 const data = await resCheck.json()
-                if (data.logged_in) {
-                    setUserName(data.nome)
-                }
+                if (data.logged_in) setUserName(data.nome)
             }
         } catch (err) {
-            console.error("Erro ao carregar dados:", err)
+            console.error('Erro ao carregar dados:', err)
         } finally {
             setLoading(false)
         }
     }
 
-    useEffect(() => {
-        fetchData()
-    }, [])
+    useEffect(() => { fetchData() }, [])
 
     function handleGerarPdf(paciente: Paciente, consulta: ConsultaRecente) {
         gerarPdfConsulta({
@@ -145,16 +210,29 @@ export function PaginaMedicos() {
             consulta: {
                 data: consulta.data,
                 medico: consulta.medico,
-                sintomas: [], // Backend doesn't return symptoms in /api/relatorios directly
+                sintomas: [],
                 observacoes: consulta.recomendacao,
             },
         })
     }
 
-    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Carregando...</div>
+    if (loading)
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Carregando...
+            </div>
+        )
+
+    const pacienteSortChips: { label: string; value: SortField }[] = [
+        { label: 'Nome', value: 'nome' },
+        { label: 'Idade', value: 'idade' },
+        { label: 'Sexo', value: 'sexo' },
+        { label: 'Data de Nascimento', value: 'nascimento' },
+    ]
 
     return (
         <div className='medico-layout'>
+            {/* ── Sidebar ── */}
             <aside className='medico-sidebar'>
                 <div className='sidebar-logo'>
                     <h3>SXF Triagem</h3>
@@ -177,22 +255,26 @@ export function PaginaMedicos() {
                 </nav>
             </aside>
 
+            {/* ── Main ── */}
             <div className='medico-main'>
                 <header className='medico-topbar'>
-                    <div className='medico-search'>
-                        <img src={lupaImg} alt="" />
-                        <input type="text" placeholder="Pesquisar" />
-                    </div>
+                    <SearchBar
+                        value={visao === 'dashboard' ? searchDashboard : searchPacientes}
+                        onChange={visao === 'dashboard' ? setSearchDashboard : setSearchPacientes}
+                    />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {userName && <span style={{ fontWeight: 500, color: '#444' }}>Bem Vindo, {userName}</span>}
-                        <button className='medico-perfil'>
+                        {userName && (
+                            <span style={{ fontWeight: 500, color: '#444' }}>Bem Vindo, {userName}</span>
+                        )}
+                        <label className='medico-perfil'>
                             <img src={medicoImg} alt="" />
                             Médico
-                        </button>
+                        </label>
                     </div>
                 </header>
 
                 <div className='medico-conteudo'>
+                    {/* ── Dashboard view ── */}
                     {visao === 'dashboard' && (
                         <>
                             <h2 className='dashboard-titulo'>Dashboard</h2>
@@ -233,18 +315,21 @@ export function PaginaMedicos() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {consultasRecentes.map((c, i) => (
+                                        {filteredConsultas.map((c, i) => (
                                             <tr key={i}>
                                                 <td>{c.paciente}</td>
                                                 <td>{c.data}</td>
                                                 <td>{c.score.toFixed(3)}</td>
                                                 <td>
-                                                    <span className={`status-badge ${c.atingiu_limiar ? 'status-pendente' : 'status-concluida'}`}>
+                                                    <span
+                                                        className={`status-badge ${
+                                                            c.atingiu_limiar ? 'status-pendente' : 'status-concluida'
+                                                        }`}
+                                                    >
                                                         {c.atingiu_limiar ? 'Encaminhar' : 'Observação'}
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    {/* In a real app, we'd fetch the specific triage for symptoms/obs */}
                                                     <button
                                                         className='btn-pdf'
                                                         onClick={() => {
@@ -264,34 +349,33 @@ export function PaginaMedicos() {
                         </>
                     )}
 
+                    {/* ── Pacientes view ── */}
                     {visao === 'pacientes' && (
                         <>
                             <div className='medico-filtros-header'>
                                 <h2>Filtros:</h2>
                                 <div className='medico-acoes-header'>
-                                    <button onClick={() => setModalConsultarAberto(true)} className='btn-acao-header'>
+                                    <button
+                                        onClick={() => setModalConsultarAberto(true)}
+                                        className='btn-acao-header'
+                                    >
                                         + Consultar Paciente
                                     </button>
-                                    <button onClick={() => setModalCadastrarAberto(true)} className='btn-acao-header btn-acao-primario'>
+                                    <button
+                                        onClick={() => setModalCadastrarAberto(true)}
+                                        className='btn-acao-header btn-acao-primario'
+                                    >
                                         + Inserir Paciente
                                     </button>
                                 </div>
                             </div>
 
-                            <div className='medico-filtros'>
-                                <button className={`filtro-chip ${sortField === 'nome' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('nome')}>
-                                    Nome {sortField === 'nome' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortField === 'idade' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('idade')}>
-                                    Idade {sortField === 'idade' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortField === 'sexo' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('sexo')}>
-                                    Sexo {sortField === 'sexo' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortField === 'nascimento' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSort('nascimento')}>
-                                    Data de nascimento {sortField === 'nascimento' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                            </div>
+                            <SortChips
+                                chips={pacienteSortChips}
+                                active={sortField}
+                                order={sortOrder}
+                                onSort={handleSort}
+                            />
 
                             <div className='medico-tabela-container'>
                                 <h3>Lista de pacientes:</h3>
@@ -316,7 +400,10 @@ export function PaginaMedicos() {
                                                 <td>{formatarCPF(p.cpf)}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-tabela' onClick={() => setPacienteParaEditar(p)}>
+                                                        <button
+                                                            className='btn-tabela'
+                                                            onClick={() => setPacienteParaEditar(p)}
+                                                        >
                                                             <img src={pincelImg} alt="Editar" />
                                                         </button>
                                                     </div>
@@ -331,19 +418,21 @@ export function PaginaMedicos() {
                 </div>
             </div>
 
+            {/* ── Modals ── */}
             {modalCadastrarAberto && (
-                <ModalCadastrarPaciente onFechar={() => {
-                    setModalCadastrarAberto(false)
-                    fetchData()
-                }} />
+                <ModalCadastrarPaciente
+                    onFechar={() => {
+                        setModalCadastrarAberto(false)
+                        fetchData()
+                    }}
+                />
             )}
             {modalConsultarAberto && (
                 <ModalConsultarPacientes onFechar={() => setModalConsultarAberto(false)} />
             )}
-
             {pacienteParaEditar && (
-                <ModalEditarPaciente 
-                    paciente={pacienteParaEditar} 
+                <ModalEditarPaciente
+                    paciente={pacienteParaEditar}
                     onFechar={() => setPacienteParaEditar(null)}
                     onSucesso={fetchData}
                 />
@@ -352,7 +441,18 @@ export function PaginaMedicos() {
             {import.meta.env.DEV && (
                 <button
                     onClick={() => navigate('/administrador')}
-                    style={{ position: 'fixed', bottom: 16, right: 16, background: '#ff6b6b', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', opacity: 0.8 }}
+                    style={{
+                        position: 'fixed',
+                        bottom: 16,
+                        right: 16,
+                        background: '#ff6b6b',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        opacity: 0.8,
+                    }}
                 >
                     [DEV] Ir para Admin
                 </button>
@@ -360,4 +460,5 @@ export function PaginaMedicos() {
         </div>
     )
 }
+
 export default PaginaMedicos
