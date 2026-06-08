@@ -10,6 +10,7 @@ import administradorImg from '../../assets/administrador.png'
 import pincelImg from '../../assets/pincel.png'
 import { formatarCPF } from '../../utils/mascaras'
 import { SearchBar } from '../../componentes/search-bar'
+import { Footer } from '../../componentes/footer'
 
 type Visao = 'dashboard' | 'medicos' | 'pacientes'
 type SortOrder = 'asc' | 'desc'
@@ -518,6 +519,7 @@ export function PaginaAdministrador() {
                         </div>
                     )}
                 </div>
+                <Footer />
             </div>
 
             {/* ── Modals ── */}

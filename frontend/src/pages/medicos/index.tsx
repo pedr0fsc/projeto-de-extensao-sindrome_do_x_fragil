@@ -11,6 +11,7 @@ import pincelImg from '../../assets/pincel.png'
 import { gerarPdfConsulta } from '../../utils/gerarPDF'
 import { formatarCPF } from '../../utils/mascaras'
 import { SearchBar } from '../../componentes/search-bar'
+import { Footer } from '../../componentes/footer'
 
 type Visao = 'dashboard' | 'pacientes'
 type SortField = 'nome' | 'idade' | 'sexo' | 'nascimento'
@@ -416,6 +417,7 @@ export function PaginaMedicos() {
                         </>
                     )}
                 </div>
+                <Footer />
             </div>
 
             {/* ── Modals ── */}

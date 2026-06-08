@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import './barra-principal-estilo.css'
 import medicoImg from '../../assets/medico.png'
+import logoImg from '../../assets/logo.png'
 
 export function BarraPrincipal() {
     const navigate = useNavigate()
     return (
         <div className='barra-principal'>
             <div className='logo'>
-                <h2>Logo do projeto</h2>
+                <img src={logoImg} alt="" width="150"/>
             </div>
             <div className='botoes-barra-wrapper'>
                 <button onClick={() => navigate('/login-medicos')} className='botao-barra'>
