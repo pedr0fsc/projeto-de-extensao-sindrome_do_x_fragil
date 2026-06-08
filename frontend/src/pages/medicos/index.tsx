@@ -173,6 +173,19 @@ export function PaginaMedicos() {
                 fetch('/api/check'),
             ])
 
+
+            if (resCheck.ok) {
+                const checkData = await resCheck.json()
+                if (!checkData.logged_in) {
+                    navigate('/login-medicos')
+                    return
+                }
+                setUserName(checkData.nome)
+            } else {
+                navigate('/login-medicos')
+                return
+            }
+
             if (resPacientes.ok) setPacientes(await resPacientes.json())
 
             if (resRelatorios.ok) {
@@ -184,11 +197,6 @@ export function PaginaMedicos() {
                     encaminhados: data.encaminhados || 0,
                     novosPacientes: data.total || 0,
                 })
-            }
-
-            if (resCheck.ok) {
-                const data = await resCheck.json()
-                if (data.logged_in) setUserName(data.nome)
             }
         } catch (err) {
             console.error('Erro ao carregar dados:', err)

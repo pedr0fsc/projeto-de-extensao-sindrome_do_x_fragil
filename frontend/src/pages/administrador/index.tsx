@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
+import { useNavigate } from 'react-router-dom'
 import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
 import pacienteImg from '../../assets/paciente.png'
@@ -101,6 +102,7 @@ export function PaginaAdministrador() {
         encaminhados: 0,
     })
     const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
     // One search term per view — no cross-tab bleed
     const [searchDashboard, setSearchDashboard] = useState('')
@@ -240,11 +242,23 @@ export function PaginaAdministrador() {
     const fetchData = async () => {
         setLoading(true)
         try {
-            const [resMedicos, resPacientes, resRelatorios] = await Promise.all([
+            const [resMedicos, resPacientes, resRelatorios, resCheck] = await Promise.all([
                 fetch('/api/medicos'),
                 fetch('/api/pacientes'),
                 fetch('/api/relatorios'),
+                fetch('/api/check'),
             ])
+
+            if (resCheck.ok) {
+                const checkData = await resCheck.json()
+                if (!checkData.logged_in) {
+                    navigate('/login-medicos')
+                    return
+                }
+            } else {
+                navigate('/login-medicos')
+                return
+            }
 
             const dataMedicos = await resMedicos.json()
             const dataPacientes = await resPacientes.json()
