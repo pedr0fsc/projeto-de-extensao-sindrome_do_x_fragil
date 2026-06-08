@@ -1,4 +1,4 @@
-CREATE DATABASE sxf_triagem_db;
+CREATE DATABASE IF NOT EXISTS sxf_triagem_db;
 USE sxf_triagem_db;
 
 CREATE TABLE instituicao(
@@ -17,10 +17,11 @@ CREATE TABLE instituicao(
 
 CREATE TABLE usuario(
 	id INT AUTO_INCREMENT PRIMARY KEY,
-    id_instituto INT NOT NULL,
+    id_instituto INT NULL,
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
     tipo ENUM('Médico','Administrador') NOT NULL,
