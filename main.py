@@ -34,7 +34,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY"),
     session_cookie="sxf_session",
-    max_age=None,
+    max_age=43200 # 12 horas
 )
 
 # ── Database ──────────────────────────────────────────────────────────────────
