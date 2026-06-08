@@ -1,5 +1,5 @@
 import './administrador-estilos.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
@@ -7,11 +7,15 @@ import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
 import pacienteImg from '../../assets/paciente.png'
 import administradorImg from '../../assets/administrador.png'
-import lupaImg from '../../assets/lupa.png'
 import pincelImg from '../../assets/pincel.png'
 import { formatarCPF } from '../../utils/mascaras'
+import { SearchBar } from '../../componentes/search-bar'
+import { Footer } from '../../componentes/footer'
 
 type Visao = 'dashboard' | 'medicos' | 'pacientes'
+type SortOrder = 'asc' | 'desc'
+type SortMedicosField = 'nome' | 'crm'
+type SortPacientesField = 'nome' | 'idade' | 'sexo' | 'nascimento'
 
 interface Medico {
     id: number
@@ -43,7 +47,7 @@ interface Relatorio {
     atingiu_limiar: boolean
 }
 
-function calcularIdade(dataNascimento: string) {
+function calcularIdade(dataNascimento: string): number {
     const hoje = new Date()
     const nascimento = new Date(dataNascimento)
     let idade = hoje.getFullYear() - nascimento.getFullYear()
@@ -54,6 +58,34 @@ function calcularIdade(dataNascimento: string) {
     return idade
 }
 
+// ─── Reusable sort chips row ──────────────────────────────────────────────────
+interface SortChipsProps<T extends string> {
+    chips: { label: string; value: T }[]
+    active: T
+    order: SortOrder
+    onSort: (field: T) => void
+}
+
+function SortChips<T extends string>({ chips, active, order, onSort }: SortChipsProps<T>) {
+    return (
+        <div className='admin-filtros'>
+            {chips.map(chip => (
+                <button
+                    key={chip.value}
+                    className={`filtro-chip ${active === chip.value ? 'filtro-chip-ativo' : ''}`}
+                    onClick={() => onSort(chip.value)}
+                >
+                    {chip.label}
+                    {active === chip.value && (
+                        <span className='filtro-chip-seta'>{order === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                </button>
+            ))}
+        </div>
+    )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export function PaginaAdministrador() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
     const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null)
@@ -66,53 +98,152 @@ export function PaginaAdministrador() {
         totalMedicos: 0,
         totalPacientes: 0,
         totalTriagens: 0,
-        encaminhados: 0
+        encaminhados: 0,
     })
     const [loading, setLoading] = useState(true)
 
+    // One search term per view — no cross-tab bleed
+    const [searchDashboard, setSearchDashboard] = useState('')
+    const [searchMedicos, setSearchMedicos] = useState('')
+    const [searchPacientes, setSearchPacientes] = useState('')
+
+    const activeSearch =
+        visao === 'dashboard' ? searchDashboard :
+        visao === 'medicos' ? searchMedicos :
+        searchPacientes
+
+    const setActiveSearch = (val: string) => {
+        if (visao === 'dashboard') setSearchDashboard(val)
+        else if (visao === 'medicos') setSearchMedicos(val)
+        else setSearchPacientes(val)
+    }
+
     // Sort states
-    const [sortMedicosField, setSortMedicosField] = useState<'nome' | 'crm'>('nome')
-    const [sortMedicosOrder, setSortMedicosOrder] = useState<'asc' | 'desc'>('asc')
-    const [sortPacientesField, setSortPacientesField] = useState<'nome' | 'idade' | 'sexo'>('nome')
-    const [sortPacientesOrder, setSortPacientesOrder] = useState<'asc' | 'desc'>('asc')
+    const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>('nome')
+    const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>('asc')
+    const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>('nome')
+    const [sortPacientesOrder, setSortPacientesOrder] = useState<SortOrder>('asc')
 
-    const sortedMedicos = [...medicos].sort((a, b) => {
-        const valA = a[sortMedicosField] || ''
-        const valB = b[sortMedicosField] || ''
-        if (valA < valB) return sortMedicosOrder === 'asc' ? -1 : 1
-        if (valA > valB) return sortMedicosOrder === 'asc' ? 1 : -1
-        return 0
-    })
-
-    const sortedPacientes = [...pacientes].sort((a, b) => {
-        let valA: any = a[sortPacientesField as keyof Paciente]
-        let valB: any = b[sortPacientesField as keyof Paciente]
-        if (sortPacientesField === 'idade') {
-            valA = calcularIdade(a.data_nascimento)
-            valB = calcularIdade(b.data_nascimento)
-        }
-        if (valA < valB) return sortPacientesOrder === 'asc' ? -1 : 1
-        if (valA > valB) return sortPacientesOrder === 'asc' ? 1 : -1
-        return 0
-    })
-
-    const handleSortMedicos = (field: 'nome' | 'crm') => {
-        if (sortMedicosField === field) setSortMedicosOrder(sortMedicosOrder === 'asc' ? 'desc' : 'asc')
-        else { setSortMedicosField(field); setSortMedicosOrder('asc'); }
+    const handleSortMedicos = (field: SortMedicosField) => {
+        if (sortMedicosField === field) setSortMedicosOrder(o => (o === 'asc' ? 'desc' : 'asc'))
+        else { setSortMedicosField(field); setSortMedicosOrder('asc') }
     }
 
-    const handleSortPacientes = (field: 'nome' | 'idade' | 'sexo') => {
-        if (sortPacientesField === field) setSortPacientesOrder(sortPacientesOrder === 'asc' ? 'desc' : 'asc')
-        else { setSortPacientesField(field); setSortPacientesOrder('asc'); }
+    const handleSortPacientes = (field: SortPacientesField) => {
+        if (sortPacientesField === field) setSortPacientesOrder(o => (o === 'asc' ? 'desc' : 'asc'))
+        else { setSortPacientesField(field); setSortPacientesOrder('asc') }
     }
 
+    // ── Filtered + sorted lists ──────────────────────────────────────────────
+
+    // Dashboard: médicos activity table filtered by dashboard search
+    const atividadesMedicos = useMemo(() => {
+        const term = searchDashboard.toLowerCase()
+        return medicos
+            .map(m => {
+                const triagensMedico = relatorios.filter(r => r.medico === m.nome)
+                return {
+                    medico: m.nome,
+                    crm: m.crm,
+                    consultas: triagensMedico.length,
+                    pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
+                }
+            })
+            .filter(a =>
+                !term ||
+                a.medico.toLowerCase().includes(term) ||
+                a.crm.toLowerCase().includes(term) ||
+                a.consultas.toString().includes(term) ||
+                a.pacientes.toString().includes(term)
+            )
+    }, [medicos, relatorios, searchDashboard])
+
+    // Dashboard: últimas triagens filtered by dashboard search
+    const filteredRelatoriosDashboard = useMemo(() => {
+        const term = searchDashboard.toLowerCase()
+        if (!term) return relatorios.slice(0, 5)
+        return relatorios
+            .filter(r =>
+                r.paciente.toLowerCase().includes(term) ||
+                r.sexo.toLowerCase().includes(term) ||
+                r.medico.toLowerCase().includes(term) ||
+                r.data.includes(term) ||
+                r.score.toString().includes(term)
+            )
+            .slice(0, 5)
+    }, [relatorios, searchDashboard])
+
+    // Médicos view: filtered + sorted
+    const sortedMedicos = useMemo(() => {
+        const term = searchMedicos.toLowerCase()
+        const filtered = term
+            ? medicos.filter(m =>
+                m.nome.toLowerCase().includes(term) ||
+                m.crm.toLowerCase().includes(term) ||
+                m.cpf.includes(term) ||
+                m.email.toLowerCase().includes(term) ||
+                m.telefone.includes(term)
+            )
+            : [...medicos]
+
+        return filtered.sort((a, b) => {
+            const valA = a[sortMedicosField] || ''
+            const valB = b[sortMedicosField] || ''
+            if (valA < valB) return sortMedicosOrder === 'asc' ? -1 : 1
+            if (valA > valB) return sortMedicosOrder === 'asc' ? 1 : -1
+            return 0
+        })
+    }, [medicos, searchMedicos, sortMedicosField, sortMedicosOrder])
+
+    // Pacientes view: filtered + sorted (includes data_nascimento search)
+    const sortedPacientes = useMemo(() => {
+        const term = searchPacientes.toLowerCase()
+        const filtered = term
+            ? pacientes.filter(p =>
+                p.nome.toLowerCase().includes(term) ||
+                p.cpf.includes(term) ||
+                formatarCPF(p.cpf).includes(term) ||
+                p.email.toLowerCase().includes(term) ||
+                p.telefone.includes(term) ||
+                p.sexo.toLowerCase().includes(term) ||
+                calcularIdade(p.data_nascimento).toString().includes(term) ||
+                p.data_nascimento.includes(term) ||
+                p.data_nascimento.split('-').reverse().join('/').includes(term)
+            )
+            : [...pacientes]
+
+        return filtered.sort((a, b) => {
+            let valA: string | number
+            let valB: string | number
+
+            if (sortPacientesField === 'idade') {
+                valA = calcularIdade(a.data_nascimento)
+                valB = calcularIdade(b.data_nascimento)
+            } else if (sortPacientesField === 'nascimento') {
+                valA = a.data_nascimento
+                valB = b.data_nascimento
+            } else if (sortPacientesField === 'sexo') {
+                valA = a.sexo
+                valB = b.sexo
+            } else {
+                valA = a.nome
+                valB = b.nome
+            }
+
+            if (valA < valB) return sortPacientesOrder === 'asc' ? -1 : 1
+            if (valA > valB) return sortPacientesOrder === 'asc' ? 1 : -1
+            return 0
+        })
+    }, [pacientes, searchPacientes, sortPacientesField, sortPacientesOrder])
+
+    // ── Data fetching ────────────────────────────────────────────────────────
     const fetchData = async () => {
         setLoading(true)
         try {
             const [resMedicos, resPacientes, resRelatorios] = await Promise.all([
                 fetch('/api/medicos'),
                 fetch('/api/pacientes'),
-                fetch('/api/relatorios')
+                fetch('/api/relatorios'),
             ])
 
             const dataMedicos = await resMedicos.json()
@@ -126,34 +257,39 @@ export function PaginaAdministrador() {
                 totalMedicos: dataMedicos.length || 0,
                 totalPacientes: dataPacientes.length || 0,
                 totalTriagens: dataRelatorios.total || 0,
-                encaminhados: dataRelatorios.encaminhados || 0
+                encaminhados: dataRelatorios.encaminhados || 0,
             })
         } catch (err) {
-            console.error("Erro ao carregar dados admin:", err)
+            console.error('Erro ao carregar dados admin:', err)
         } finally {
             setLoading(false)
         }
     }
 
-    useEffect(() => {
-        fetchData()
-    }, [])
+    useEffect(() => { fetchData() }, [])
 
-    // Agrupar atividades por médico
-    const atividadesMedicos = medicos.map(m => {
-        const triagensMedico = relatorios.filter(r => r.medico === m.nome)
-        return {
-            medico: m.nome,
-            crm: m.crm,
-            consultas: triagensMedico.length,
-            pacientes: new Set(triagensMedico.map(r => r.paciente)).size
-        }
-    })
+    if (loading)
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+                Carregando Painel Admin...
+            </div>
+        )
 
-    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Carregando Painel Admin...</div>
+    const medicosSortChips: { label: string; value: SortMedicosField }[] = [
+        { label: 'Nome', value: 'nome' },
+        { label: 'CRM', value: 'crm' },
+    ]
+
+    const pacientesSortChips: { label: string; value: SortPacientesField }[] = [
+        { label: 'Nome', value: 'nome' },
+        { label: 'Idade', value: 'idade' },
+        { label: 'Sexo', value: 'sexo' },
+        { label: 'Data de Nascimento', value: 'nascimento' },
+    ]
 
     return (
         <div className='admin-layout'>
+            {/* ── Sidebar ── */}
             <aside className='admin-sidebar'>
                 <div className='sidebar-logo'>
                     <h3>SXF Admin</h3>
@@ -183,19 +319,18 @@ export function PaginaAdministrador() {
                 </nav>
             </aside>
 
+            {/* ── Main ── */}
             <div className='admin-main'>
                 <header className='admin-topbar'>
-                    <div className='admin-search'>
-                        <img src={lupaImg} alt="" />
-                        <input type="text" placeholder="Pesquisar" />
-                    </div>
-                    <button className='admin-perfil'>
+                    <SearchBar value={activeSearch} onChange={setActiveSearch} />
+                    <label className='admin-perfil'>
                         <img src={administradorImg} alt="" />
                         Administrador
-                    </button>
+                    </label>
                 </header>
 
                 <div className='admin-conteudo'>
+                    {/* ── Dashboard view ── */}
                     {visao === 'dashboard' && (
                         <>
                             <h2 className='dashboard-titulo'>Dashboard do Administrador</h2>
@@ -264,7 +399,7 @@ export function PaginaAdministrador() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {relatorios.slice(0, 5).map((r, i) => (
+                                        {filteredRelatoriosDashboard.map((r, i) => (
                                             <tr key={i}>
                                                 <td>{r.paciente}</td>
                                                 <td>{r.sexo}</td>
@@ -279,6 +414,7 @@ export function PaginaAdministrador() {
                         </>
                     )}
 
+                    {/* ── Médicos view ── */}
                     {visao === 'medicos' && (
                         <div className='admin-secao'>
                             <div className='admin-filtros-header'>
@@ -287,14 +423,14 @@ export function PaginaAdministrador() {
                                     + Inserir usuário
                                 </button>
                             </div>
-                            <div className='admin-filtros'>
-                                <button className={`filtro-chip ${sortMedicosField === 'nome' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSortMedicos('nome')}>
-                                    Nome {sortMedicosField === 'nome' && (sortMedicosOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortMedicosField === 'crm' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSortMedicos('crm')}>
-                                    CRM {sortMedicosField === 'crm' && (sortMedicosOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                            </div>
+
+                            <SortChips
+                                chips={medicosSortChips}
+                                active={sortMedicosField}
+                                order={sortMedicosOrder}
+                                onSort={handleSortMedicos}
+                            />
+
                             <div className='admin-tabela-container'>
                                 <h3>Lista de usuários:</h3>
                                 <table className='admin-tabela'>
@@ -314,7 +450,10 @@ export function PaginaAdministrador() {
                                                 <td>{m.crm || '-'}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-acao' onClick={() => setMedicoParaEditar(m)}>
+                                                        <button
+                                                            className='btn-acao'
+                                                            onClick={() => setMedicoParaEditar(m)}
+                                                        >
                                                             <img src={pincelImg} alt="Editar" />
                                                         </button>
                                                     </div>
@@ -327,22 +466,20 @@ export function PaginaAdministrador() {
                         </div>
                     )}
 
+                    {/* ── Pacientes view ── */}
                     {visao === 'pacientes' && (
                         <div className='admin-secao'>
                             <div className='admin-filtros-header'>
                                 <h2>Filtros:</h2>
                             </div>
-                            <div className='admin-filtros'>
-                                <button className={`filtro-chip ${sortPacientesField === 'nome' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSortPacientes('nome')}>
-                                    Nome {sortPacientesField === 'nome' && (sortPacientesOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortPacientesField === 'idade' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSortPacientes('idade')}>
-                                    Idade {sortPacientesField === 'idade' && (sortPacientesOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                                <button className={`filtro-chip ${sortPacientesField === 'sexo' ? 'filtro-chip-ativo' : ''}`} onClick={() => handleSortPacientes('sexo')}>
-                                    Sexo {sortPacientesField === 'sexo' && (sortPacientesOrder === 'asc' ? '↑' : '↓')}
-                                </button>
-                            </div>
+
+                            <SortChips
+                                chips={pacientesSortChips}
+                                active={sortPacientesField}
+                                order={sortPacientesOrder}
+                                onSort={handleSortPacientes}
+                            />
+
                             <div className='admin-tabela-container'>
                                 <h3>Lista de pacientes:</h3>
                                 <table className='admin-tabela'>
@@ -366,7 +503,10 @@ export function PaginaAdministrador() {
                                                 <td>{formatarCPF(p.cpf)}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button className='btn-acao' onClick={() => setPacienteParaEditar(p)}>
+                                                        <button
+                                                            className='btn-acao'
+                                                            onClick={() => setPacienteParaEditar(p)}
+                                                        >
                                                             <img src={pincelImg} alt="Editar" />
                                                         </button>
                                                     </div>
@@ -379,26 +519,28 @@ export function PaginaAdministrador() {
                         </div>
                     )}
                 </div>
+                <Footer />
             </div>
 
+            {/* ── Modals ── */}
             {modalCadastrarAberto && (
-                <ModalCadastrarMedico onFechar={() => {
-                    setModalCadastrarAberto(false)
-                    fetchData()
-                }} />
+                <ModalCadastrarMedico
+                    onFechar={() => {
+                        setModalCadastrarAberto(false)
+                        fetchData()
+                    }}
+                />
             )}
-
             {medicoParaEditar && (
-                <ModalEditarUsuario 
-                    usuario={medicoParaEditar} 
+                <ModalEditarUsuario
+                    usuario={medicoParaEditar}
                     onFechar={() => setMedicoParaEditar(null)}
                     onSucesso={fetchData}
                 />
             )}
-
             {pacienteParaEditar && (
-                <ModalEditarPaciente 
-                    paciente={pacienteParaEditar} 
+                <ModalEditarPaciente
+                    paciente={pacienteParaEditar}
                     onFechar={() => setPacienteParaEditar(null)}
                     onSucesso={fetchData}
                 />
@@ -406,4 +548,5 @@ export function PaginaAdministrador() {
         </div>
     )
 }
+
 export default PaginaAdministrador
