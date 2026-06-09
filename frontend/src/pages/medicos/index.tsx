@@ -2,6 +2,7 @@ import './pagina-medicos.css'
 import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
+import { useAlerta } from '../../componentes/alerta'
 import { useState, useEffect, useMemo } from 'react'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
@@ -99,6 +100,7 @@ export function PaginaMedicos() {
     const [sortField, setSortField] = useState<SortField>('nome')
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
     const navigate = useTransitionNavigate()
+    const { mostrarAlerta } = useAlerta()
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -344,7 +346,7 @@ export function PaginaMedicos() {
                                                         onClick={() => {
                                                             const p = pacientes.find(p => p.nome === c.paciente)
                                                             if (p) handleGerarPdf(p, c)
-                                                            else alert('Dados do paciente não encontrados para gerar PDF')
+                                                            else mostrarAlerta('Dados do paciente não encontrados para gerar PDF', 'erro')
                                                         }}
                                                     >
                                                         Gerar PDF

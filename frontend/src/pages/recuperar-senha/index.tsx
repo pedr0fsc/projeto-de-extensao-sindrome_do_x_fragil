@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
+import { Footer } from '../../componentes/footer'
 import './pagina-recuperar.css'
 
 export function PaginaResetSenha() {
@@ -50,19 +51,23 @@ export function PaginaResetSenha() {
 
     if (!token) {
         return (
-            <div className='reset-layout'>
-                <div className='reset-box' style={{ textAlign: 'center' }}>
-                    <h2 style={{ color: '#ff6b6b' }}>Link Inválido</h2>
-                    <p>O token de recuperação está ausente ou é inválido.</p>
-                    <button className='btn-reset' onClick={() => navigate('/login-medicos')}>
-                        Voltar ao Login
-                    </button>
+            <div className='reset-page'>
+                <div className='reset-layout'>
+                    <div className='reset-box' style={{ textAlign: 'center' }}>
+                        <h2 style={{ color: '#ff6b6b' }}>Link Inválido</h2>
+                        <p>O token de recuperação está ausente ou é inválido.</p>
+                        <button className='btn-reset' onClick={() => navigate('/login-medicos')}>
+                            Voltar ao Login
+                        </button>
+                    </div>
                 </div>
+                <Footer />
             </div>
         )
     }
 
     return (
+        <div className='reset-page'>
         <div className='reset-layout'>
             <div className='reset-box'>
                 {sucesso ? (
@@ -144,6 +149,8 @@ export function PaginaResetSenha() {
                     </>
                 )}
             </div>
+        </div>
+        <Footer />
         </div>
     )
 }

@@ -5,11 +5,13 @@ import PaginaMedicos from '../src/pages/medicos'
 import PaginaAdministrador from '../src/pages/administrador'
 import NaoEncontrado from '../src/pages/nao-encontrado'
 import PaginaResetSenha from '../src/pages/recuperar-senha'
+import { AlertaProvider } from '../src/componentes/alerta'
 
 import './App.css'
 
 function App() {
   return (
+    <AlertaProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -21,6 +23,7 @@ function App() {
         <Route path="*" element={<NaoEncontrado />} />
       </Routes>
     </BrowserRouter>
+    </AlertaProvider>
   )
 }
 

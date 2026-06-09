@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import './recuperar-senha-estilos.css'
+import { useAlerta } from '../alerta'
 
 interface Props {
     onFechar: () => void
 }
 
 export function ModalSolicitarRecuperacao({ onFechar }: Props) {
+    const { mostrarAlerta } = useAlerta()
     const [login, setLogin] = useState('')
     const [loading, setLoading] = useState(false)
     const [sucesso, setSucesso] = useState(false)
@@ -27,11 +29,11 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
                     setDevLink(data.link)
                 }
             } else {
-                alert('Erro ao solicitar recuperação')
+                mostrarAlerta('Erro ao solicitar recuperação', 'erro')
             }
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }

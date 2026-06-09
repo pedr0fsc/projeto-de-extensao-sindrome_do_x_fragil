@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './modal-cadastrar-medico-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { useAlerta } from '../alerta'
 
 interface Props {
     onFechar: () => void
@@ -16,6 +17,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
     const [crm, setCrm] = useState('')
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
     const [loading, setLoading] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
     const handleConcluir = async () => {
         setLoading(true)
@@ -35,14 +37,14 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
             })
             const data = await response.json()
             if (data.success) {
-                alert('Usuário cadastrado com sucesso!')
+                mostrarAlerta('Usuário cadastrado com sucesso!', 'sucesso')
                 onFechar()
             } else {
-                alert('Erro ao cadastrar: ' + (data.detail || 'Erro desconhecido'))
+                mostrarAlerta('Erro ao cadastrar: ' + (data.detail || 'Erro desconhecido'), 'erro')
             }
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }

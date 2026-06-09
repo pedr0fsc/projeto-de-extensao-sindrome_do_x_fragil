@@ -1,7 +1,13 @@
 @import "../../variaveis.css";
 
+.reset-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 .reset-layout {
-    height: 100vh;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
