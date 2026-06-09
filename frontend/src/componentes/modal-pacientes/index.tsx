@@ -186,7 +186,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                 </div>
                             </div>
                             <div className='ms-campo-full'>
-                                <label className='ms-label'>Gênero</label>
+                                <label className='ms-label'>Sexo Biológico</label>
                                 <div className='ms-radio-grupo'>
                                     {['Masculino', 'Feminino'].map(g => (
                                         <button
