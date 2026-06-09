@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import './pagina-recuperar.css'
 
 export function PaginaResetSenha() {
@@ -12,7 +13,7 @@ export function PaginaResetSenha() {
     const [loading, setLoading] = useState(false)
     const [erro, setErro] = useState('')
     const [sucesso, setSucesso] = useState(false)
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
 
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault()

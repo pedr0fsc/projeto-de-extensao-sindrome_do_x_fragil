@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import './login-medico-estilos.css'
 import { ModalSolicitarRecuperacao } from '../modal-recuperar-senha'
 
 export function LoginMedico() {
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
     const [login, setLogin] = useState('')
     const [senha, setSenha] = useState('')
     const [mostrarSenha, setMostrarSenha] = useState(false)

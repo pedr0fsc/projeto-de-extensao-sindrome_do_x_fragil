@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import './barra-principal-estilo.css'
 import medicoImg from '../../assets/medico.png'
 import logoImg from '../../assets/logo.png'
 
 export function BarraPrincipal() {
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
     return (
         <div className='barra-principal'>
             <div className='logo'>

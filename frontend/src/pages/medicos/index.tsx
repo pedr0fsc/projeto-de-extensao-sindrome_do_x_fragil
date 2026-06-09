@@ -3,7 +3,7 @@ import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
 import pacienteImg from '../../assets/paciente.png'
 import medicoImg from '../../assets/medico.png'
@@ -98,7 +98,7 @@ export function PaginaMedicos() {
 
     const [sortField, setSortField] = useState<SortField>('nome')
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {

@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import './nao-encontrado-estilos.css'
 
 export function NaoEncontrado() {
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
 
     return (
         <div className='erro-layout'>
