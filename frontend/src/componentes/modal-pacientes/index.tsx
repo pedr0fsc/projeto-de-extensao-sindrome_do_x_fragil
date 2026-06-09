@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './modal-pacientes-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { useAlerta } from '../alerta'
 
 interface Props {
     onFechar: () => void
@@ -42,6 +43,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
     const [sintomasMarcados, setSintomasMarcados] = useState<number[]>([])
 
     const [loading, setLoading] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
     useEffect(() => {
         fetch('/api/sintomas')
@@ -75,7 +77,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
             const dataPaciente = await resPaciente.json()
 
             if (!dataPaciente.success) {
-                alert('Erro ao cadastrar paciente: ' + (dataPaciente.detail || 'Erro desconhecido'))
+                mostrarAlerta('Erro ao cadastrar paciente: ' + (dataPaciente.detail || 'Erro desconhecido'), 'erro')
                 setLoading(false)
                 return
             }
@@ -100,15 +102,15 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
             const dataTriagem = await resTriagem.json()
 
             if (dataTriagem.triagem_id) {
-                alert(`Triagem concluída! Score: ${dataTriagem.score}. Recomendação: ${dataTriagem.recomendacao}`)
+                mostrarAlerta(`Triagem concluída! Score: ${dataTriagem.score}. Recomendação: ${dataTriagem.recomendacao}`, 'sucesso')
                 onFechar()
             } else {
-                alert('Erro ao realizar triagem')
+                mostrarAlerta('Erro ao realizar triagem', 'erro')
             }
 
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }
@@ -184,7 +186,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                 </div>
                             </div>
                             <div className='ms-campo-full'>
-                                <label className='ms-label'>Gênero</label>
+                                <label className='ms-label'>Sexo Biológico</label>
                                 <div className='ms-radio-grupo'>
                                     {['Masculino', 'Feminino'].map(g => (
                                         <button

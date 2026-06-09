@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './modal-consultar-pacientes-estilos.css'
 import { formatarCPF, limparFormatacao } from '../../utils/mascaras'
+import { useAlerta } from '../alerta'
 
 type Etapa = 'busca' | 'perfil' | 'novo-prontuario'
 
@@ -66,6 +67,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
     
     const [loading, setLoading] = useState(false)
     const [prontuarioSalvo, setProntuarioSalvo] = useState(false)
+    const { mostrarAlerta } = useAlerta()
     const [triagemGeradaId, setTriagemGeradaId] = useState<number | null>(null)
 
     useEffect(() => {
@@ -131,7 +133,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
             }
         } catch (err) {
             console.error(err)
-            alert('Erro ao buscar paciente')
+            mostrarAlerta('Erro ao buscar paciente', 'erro')
         } finally {
             setLoading(false)
         }
@@ -191,11 +193,11 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                 setProntuarioSalvo(true)
                 fetchHistorico(paciente.id)
             } else {
-                alert('Erro ao salvar prontuário')
+                mostrarAlerta('Erro ao salvar prontuário', 'erro')
             }
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }

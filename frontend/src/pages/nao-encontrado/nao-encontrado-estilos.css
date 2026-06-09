@@ -1,7 +1,13 @@
 @import "../../variaveis.css";
 
-.erro-layout {
+.erro-page {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.erro-layout {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;

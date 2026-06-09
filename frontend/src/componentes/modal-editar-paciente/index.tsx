@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import '../modal-pacientes/modal-pacientes-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { useAlerta } from '../alerta'
 
 interface Props {
     paciente: {
@@ -24,6 +25,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     const [telefone, setTelefone] = useState(formatarTelefone(paciente.telefone))
     const [email, setEmail] = useState(paciente.email)
     const [loading, setLoading] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
     const handleSalvar = async () => {
         setLoading(true)
@@ -42,15 +44,15 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
             })
             const data = await response.json()
             if (data.success) {
-                alert('Dados do paciente atualizados com sucesso!')
+                mostrarAlerta('Dados do paciente atualizados com sucesso!', 'sucesso')
                 onSucesso()
                 onFechar()
             } else {
-                alert('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'))
+                mostrarAlerta('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'), 'erro')
             }
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }
@@ -93,7 +95,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                             </div>
                         </div>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Gênero</label>
+                            <label className='ms-label'>Sexo Biológico</label>
                             <div className='ms-radio-grupo'>
                                 {['Masculino', 'Feminino'].map(g => (
                                     <button

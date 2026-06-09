@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
-import { useNavigate } from 'react-router-dom'
+import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
 import pacienteImg from '../../assets/paciente.png'
@@ -102,7 +102,7 @@ export function PaginaAdministrador() {
         encaminhados: 0,
     })
     const [loading, setLoading] = useState(true)
-    const navigate = useNavigate()
+    const navigate = useTransitionNavigate()
 
     // One search term per view — no cross-tab bleed
     const [searchDashboard, setSearchDashboard] = useState('')
@@ -501,7 +501,7 @@ export function PaginaAdministrador() {
                                         <tr>
                                             <th>Nome</th>
                                             <th>Idade</th>
-                                            <th>Gênero</th>
+                                            <th>Sexo Biológico</th>
                                             <th>Nascimento</th>
                                             <th>CPF</th>
                                             <th>Ações</th>
