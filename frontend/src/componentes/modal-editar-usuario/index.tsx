@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import '../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { useAlerta } from '../alerta'
 
 interface Props {
     usuario: {
@@ -26,6 +27,7 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     const [crm, setCrm] = useState(usuario.crm || '')
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as any)
     const [loading, setLoading] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
     const handleSalvar = async () => {
         setLoading(true)
@@ -45,15 +47,15 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
             })
             const data = await response.json()
             if (data.success) {
-                alert('Usuário atualizado com sucesso!')
+                mostrarAlerta('Usuário atualizado com sucesso!', 'sucesso')
                 onSucesso()
                 onFechar()
             } else {
-                alert('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'))
+                mostrarAlerta('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'), 'erro')
             }
         } catch (err) {
             console.error(err)
-            alert('Erro de conexão')
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
             setLoading(false)
         }
