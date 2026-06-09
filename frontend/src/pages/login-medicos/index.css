@@ -25,7 +25,6 @@
     border: 2px solid var(--cor-fundo);
     border-radius: 20px;
     padding: 8px 20px;
-    cursor: pointer;
     font-family: "Nunito", sans-serif;
     font-size: 14px;
     color: var(--cor-texto);
@@ -35,11 +34,6 @@
 .btn-nav-login img {
     width: 20px;
     height: 20px;
-}
-
-.btn-nav-login:hover {
-    background-color: var(--cor-secundaria);
-    color: white;
 }
 
 .login-container {
