@@ -12,12 +12,12 @@ from fastapi import Depends, FastAPI, File, HTTPException, Request, BackgroundTa
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-import time
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, DECIMAL, ForeignKey,
-    Integer, String, Text, Enum as SQLEnum, create_engine, inspect
+    Integer, String, Text, Enum as SQLEnum, create_engine,
 )
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, relationship
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
@@ -113,7 +113,7 @@ def init_admin():
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(on_startup=[init_db, init_seed_data, init_admin])
+app = FastAPI()
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY"),
@@ -124,7 +124,7 @@ app.add_middleware(
 # ── Database ──────────────────────────────────────────────────────────────────
 DATABASE_URL = (
     f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-    f"@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}?charset=utf8mb4"
+    f"@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 )
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
@@ -151,7 +151,24 @@ class Medico(Base):
     __tablename__ = "medico"
     id = Column(Integer, ForeignKey("usuario.id"), primary_key=True)
     crm = Column(String(13), unique=True, nullable=False)
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=True)  # FK direta
     usuario = relationship("Usuario")
+    instituicao = relationship("Instituicao")
+
+
+class Instituicao(Base):
+    __tablename__ = "instituicao"
+    id = Column(Integer, primary_key=True)
+    nome_fantasia = Column(String(150), nullable=False)
+    nome = Column(String(500))
+    rua = Column(String(150), nullable=False)
+    numero = Column(String(10), nullable=False)
+    complemento = Column(String(100))
+    bairro = Column(String(100), nullable=False)
+    cidade = Column(String(100), nullable=False)
+    estado = Column(String(2), nullable=False)
+    cep = Column(String(9), nullable=False)
+    cnpj = Column(String(18), nullable=False, unique=True)
 
 class InstitutoMedico(Base):
     __tablename__ = "instituto_medico"
@@ -393,7 +410,6 @@ def enviar_email(destino: str, nome: str, score: float, recomendacao: str, limia
     return enviar_email_smtp(destino, subject, html_content, text_content)
 
 
-
 def gerar_pdf(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -> BytesIO:
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -583,6 +599,41 @@ async def api_limiares(db=Depends(get_db)):
     return {l.sexo: float(l.valor) for l in db.query(Limiar).all()}
 
 
+@app.get("/api/instituicoes")
+async def api_instituicoes(db=Depends(get_db)):
+    return [
+        {
+            "id": i.id,
+            "nome_fantasia": i.nome_fantasia,
+            "nome": i.nome,
+            "cidade": i.cidade,
+            "estado": i.estado,
+            "cnpj": i.cnpj,
+        }
+        for i in db.query(Instituicao).all()
+    ]
+
+
+@app.post("/api/instituicao")
+async def api_criar_instituicao(request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()
+    nova = Instituicao(
+        nome_fantasia=body["nome_fantasia"],
+        nome=body.get("nome"),
+        rua=body["rua"],
+        numero=body["numero"],
+        complemento=body.get("complemento"),
+        bairro=body["bairro"],
+        cidade=body["cidade"],
+        estado=body["estado"],
+        cep=body["cep"],
+        cnpj=body["cnpj"],
+    )
+    db.add(nova)
+    db.commit()
+    return {"success": True, "id": nova.id}
+
+
 @app.post("/api/paciente/buscar")
 async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(require_auth)):
     body = await request.json()
@@ -621,12 +672,14 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
 
+    instituicao = None
     id_instituto = body.get("id_instituto")
     if id_instituto is not None:
         instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
+    elif medico and medico.id_instituto:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == medico.id_instituto).first()
     else:
-        inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
-        instituicao = db.query(Instituicao).filter(Instituicao.id == inst_ids[0]).first() if inst_ids else get_default_instituicao(db)
+        instituicao = get_default_instituicao(db)
 
     if not instituicao:
         raise HTTPException(status_code=400, detail="Instituição não encontrada")
@@ -817,7 +870,6 @@ async def api_relatorios(request: Request, db=Depends(get_db), _=Depends(require
     if is_admin:
         resultados = db.query(Resultado).all()
     else:
-        # Médicos veem apenas as triagens que eles realizaram
         resultados = db.query(Resultado).join(Triagem).filter(Triagem.id_medico == request.session.get("id_usuario")).all()
     
     data = []
@@ -872,7 +924,11 @@ async def api_criar_usuario(request: Request, db=Depends(get_db), _=Depends(requ
     db.add(novo)
     db.flush()
     if body["tipo"] == "Médico" and body.get("crm"):
-        db.add(Medico(id=novo.id, crm=body["crm"]))
+        db.add(Medico(
+            id=novo.id,
+            crm=body["crm"],
+            id_instituto=body.get("id_instituto"),
+        ))
     db.commit()
     return {"success": True, "id": novo.id}
 
@@ -894,12 +950,15 @@ async def api_atualizar_usuario(id: int, request: Request, db=Depends(get_db), _
     if body.get("senha"):
         user.senha = hash_senha(body["senha"])
         
-    if user.tipo == "Médico" and body.get("crm"):
+    if user.tipo == "Médico":
         medico = db.query(Medico).filter(Medico.id == id).first()
         if medico:
-            medico.crm = body["crm"]
-        else:
-            db.add(Medico(id=user.id, crm=body["crm"]))
+            if body.get("crm"):
+                medico.crm = body["crm"]
+            if body.get("id_instituto") is not None:
+                medico.id_instituto = body["id_instituto"]
+        elif body.get("crm"):
+            db.add(Medico(id=user.id, crm=body["crm"], id_instituto=body.get("id_instituto")))
     
     db.commit()
     return {"success": True}
@@ -912,7 +971,6 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
 
-    # Check permission (only owner or admin)
     is_admin = request.session.get("tipo") == "Administrador"
     if not is_admin and paciente.id_medico_responsavel != request.session.get("id_usuario"):
         raise HTTPException(status_code=403, detail="Sem permissão para editar este paciente")
@@ -1012,10 +1070,10 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
 @app.post("/api/paciente/trocar_medico")
 async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(require_admin)):
     body = await request.json()
-    inst_ids = get_institutos_medico(db, body["novo_medico_id"])
+    novo_medico = db.query(Medico).filter(Medico.id == body["novo_medico_id"]).first()
     update_data = {"id_medico_responsavel": body["novo_medico_id"]}
-    if inst_ids:
-        update_data["id_instituto"] = inst_ids[0]
+    if novo_medico and novo_medico.id_instituto:
+        update_data["id_instituto"] = novo_medico.id_instituto
     db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(update_data)
     db.commit()
     return {"success": True}
@@ -1034,10 +1092,8 @@ async def api_medicos(db=Depends(get_db)):
             "telefone": m.usuario.telefone,
             "tipo": m.usuario.tipo,
             "ativo": bool(m.usuario.ativo),
-            "vinculos": [
-                {"id_instituto": v.id_instituto, "ativo": bool(v.vinculo_ativo)}
-                for v in db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == m.id).all()
-            ],
+            "id_instituto": m.id_instituto,
+            "instituicao": m.instituicao.nome_fantasia if m.instituicao else None,
         }
         for m in medicos
     ]
@@ -1063,9 +1119,3 @@ else:
     print("frontend/dist não encontrado - Rodando sem React")
 
 handler = Mangum(app)
-
-if __name__ == "__main__":
-    import uvicorn
-    # Get the port from environment variables, defaulting to 3001
-    port = int(os.getenv("PORT", 3001))
-    uvicorn.run(app, host="0.0.0.0", port=port)
