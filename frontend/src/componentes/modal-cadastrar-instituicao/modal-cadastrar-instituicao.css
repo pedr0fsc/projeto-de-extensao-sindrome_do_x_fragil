@@ -1,0 +1,146 @@
+@import "../../variaveis.css";
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-family: "Nunito", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.botao-fechar {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    opacity: 0.5;
+    line-height: 1;
+}
+
+.botao-fechar:hover {
+    opacity: 1;
+}
+
+.modal-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-campo label {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cor-texto);
+}
+
+.form-campo input {
+    border: 1px solid var(--cor-terciaria);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-campo input:focus {
+    border-color: var(--cor-secundaria);
+}
+
+.form-linha {
+    display: flex;
+    gap: 12px;
+}
+
+.form-linha .form-campo {
+    flex: 1;
+}
+
+.form-campo-pequeno {
+    flex: 0 0 90px !important;
+}
+
+.form-campo-estado {
+    flex: 0 0 70px !important;
+}
+
+.modal-rodape {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.botao-concluir {
+    background-color: var(--cor-secundaria);
+    color: white;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.botao-concluir:hover {
+    background-color: var(--cor-primaria);
+}
+
+.botao-concluir:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.botao-cancelar {
+    background-color: white;
+    border: 1px solid var(--cor-terciaria);
+    padding: 10px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    transition: background-color 0.2s;
+}
+
+.botao-cancelar:hover {
+    background-color: var(--cor-quaternaria);
+}

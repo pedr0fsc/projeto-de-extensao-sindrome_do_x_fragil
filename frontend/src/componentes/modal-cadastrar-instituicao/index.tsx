@@ -1,114 +1,118 @@
 import { useState } from 'react'
+import './modal-cadastrar-instituicao-estilos.css'
+import { useAlerta } from '../alerta'
 
 interface Props {
     onFechar: () => void
 }
 
 export function ModalCadastrarInstituicao({ onFechar }: Props) {
-    const [form, setForm] = useState({
-        nome_fantasia: '',
-        nome: '',
-        cnpj: '',
-        rua: '',
-        numero: '',
-        complemento: '',
-        bairro: '',
-        cidade: '',
-        estado: '',
-        cep: '',
-    })
-    const [erro, setErro] = useState('')
-    const [salvando, setSalvando] = useState(false)
+    const [nomeFantasia, setNomeFantasia] = useState('')
+    const [nome, setNome] = useState('')
+    const [cnpj, setCnpj] = useState('')
+    const [cep, setCep] = useState('')
+    const [rua, setRua] = useState('')
+    const [numero, setNumero] = useState('')
+    const [complemento, setComplemento] = useState('')
+    const [bairro, setBairro] = useState('')
+    const [cidade, setCidade] = useState('')
+    const [estado, setEstado] = useState('')
+    const [loading, setLoading] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setForm(f => ({ ...f, [e.target.name]: e.target.value }))
-    }
-
-    const handleSubmit = async () => {
-        if (!form.nome_fantasia || !form.cnpj || !form.rua || !form.numero || !form.bairro || !form.cidade || !form.estado || !form.cep) {
-            setErro('Preencha todos os campos obrigatórios.')
+    const handleConcluir = async () => {
+        if (!nomeFantasia || !cnpj || !rua || !numero || !bairro || !cidade || !estado || !cep) {
+            mostrarAlerta('Preencha todos os campos obrigatórios.', 'erro')
             return
         }
-        setSalvando(true)
-        setErro('')
+        setLoading(true)
         try {
-            const res = await fetch('/api/instituicao', {
+            const response = await fetch('/api/instituicao', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({ nome_fantasia: nomeFantasia, nome, cnpj, rua, numero, complemento, bairro, cidade, estado, cep })
             })
-            const data = await res.json()
+            const data = await response.json()
             if (data.success) {
+                mostrarAlerta('Instituição cadastrada com sucesso!', 'sucesso')
                 onFechar()
             } else {
-                setErro('Erro ao cadastrar instituição.')
+                mostrarAlerta('Erro ao cadastrar instituição.', 'erro')
             }
-        } catch {
-            setErro('Erro de conexão.')
+        } catch (err) {
+            console.error(err)
+            mostrarAlerta('Erro de conexão', 'erro')
         } finally {
-            setSalvando(false)
+            setLoading(false)
         }
     }
 
     return (
-        <div className='modal-overlay' onClick={onFechar}>
-            <div className='modal-caixa' onClick={e => e.stopPropagation()}>
-                <h2 className='modal-titulo'>Cadastrar Instituição</h2>
+        <div className='overlay' onClick={onFechar}>
+            <div className='modal' onClick={e => e.stopPropagation()}>
 
-                <div className='modal-campo'>
-                    <label>Nome Fantasia *</label>
-                    <input name='nome_fantasia' value={form.nome_fantasia} onChange={handleChange} placeholder='Nome Fantasia' />
+                <div className='modal-header'>
+                    <h2>Adicionar Instituição:</h2>
+                    <button className='botao-fechar' onClick={onFechar}>✕</button>
                 </div>
-                <div className='modal-campo'>
-                    <label>Razão Social</label>
-                    <input name='nome' value={form.nome} onChange={handleChange} placeholder='Razão Social (opcional)' />
-                </div>
-                <div className='modal-campo'>
-                    <label>CNPJ *</label>
-                    <input name='cnpj' value={form.cnpj} onChange={handleChange} placeholder='00.000.000/0001-00' />
-                </div>
-                <div className='modal-campo'>
-                    <label>CEP *</label>
-                    <input name='cep' value={form.cep} onChange={handleChange} placeholder='00000-000' />
-                </div>
-                <div className='modal-campo'>
-                    <label>Rua *</label>
-                    <input name='rua' value={form.rua} onChange={handleChange} placeholder='Rua' />
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <div className='modal-campo' style={{ flex: 1 }}>
-                        <label>Número *</label>
-                        <input name='numero' value={form.numero} onChange={handleChange} placeholder='Nº' />
+
+                <div className='modal-corpo'>
+                    <div className='form-campo'>
+                        <label>Nome Fantasia *</label>
+                        <input type='text' value={nomeFantasia} onChange={e => setNomeFantasia(e.target.value)} placeholder='Nome Fantasia' />
                     </div>
-                    <div className='modal-campo' style={{ flex: 2 }}>
+                    <div className='form-campo'>
+                        <label>Razão Social</label>
+                        <input type='text' value={nome} onChange={e => setNome(e.target.value)} placeholder='Razão Social (opcional)' />
+                    </div>
+                    <div className='form-campo'>
+                        <label>CNPJ *</label>
+                        <input type='text' value={cnpj} onChange={e => setCnpj(e.target.value)} placeholder='00.000.000/0001-00' maxLength={18} />
+                    </div>
+                    <div className='form-linha'>
+                        <div className='form-campo'>
+                            <label>CEP *</label>
+                            <input type='text' value={cep} onChange={e => setCep(e.target.value)} placeholder='00000-000' maxLength={9} />
+                        </div>
+                        <div className='form-campo form-campo-pequeno'>
+                            <label>Número *</label>
+                            <input type='text' value={numero} onChange={e => setNumero(e.target.value)} placeholder='Nº' maxLength={10} />
+                        </div>
+                    </div>
+                    <div className='form-campo'>
+                        <label>Rua *</label>
+                        <input type='text' value={rua} onChange={e => setRua(e.target.value)} placeholder='Rua' />
+                    </div>
+                    <div className='form-campo'>
                         <label>Complemento</label>
-                        <input name='complemento' value={form.complemento} onChange={handleChange} placeholder='Apto, sala...' />
+                        <input type='text' value={complemento} onChange={e => setComplemento(e.target.value)} placeholder='Apto, sala... (opcional)' />
                     </div>
-                </div>
-                <div className='modal-campo'>
-                    <label>Bairro *</label>
-                    <input name='bairro' value={form.bairro} onChange={handleChange} placeholder='Bairro' />
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <div className='modal-campo' style={{ flex: 3 }}>
-                        <label>Cidade *</label>
-                        <input name='cidade' value={form.cidade} onChange={handleChange} placeholder='Cidade' />
+                    <div className='form-campo'>
+                        <label>Bairro *</label>
+                        <input type='text' value={bairro} onChange={e => setBairro(e.target.value)} placeholder='Bairro' />
                     </div>
-                    <div className='modal-campo' style={{ flex: 1 }}>
-                        <label>Estado *</label>
-                        <input name='estado' value={form.estado} onChange={handleChange} placeholder='PR' maxLength={2} />
+                    <div className='form-linha'>
+                        <div className='form-campo'>
+                            <label>Cidade *</label>
+                            <input type='text' value={cidade} onChange={e => setCidade(e.target.value)} placeholder='Cidade' />
+                        </div>
+                        <div className='form-campo form-campo-estado'>
+                            <label>UF *</label>
+                            <input type='text' value={estado} onChange={e => setEstado(e.target.value.toUpperCase())} placeholder='PR' maxLength={2} />
+                        </div>
                     </div>
                 </div>
 
-                {erro && <p className='modal-erro'>{erro}</p>}
-
-                <div className='modal-botoes'>
-                    <button className='btn-cancelar' onClick={onFechar}>Cancelar</button>
-                    <button className='btn-salvar' onClick={handleSubmit} disabled={salvando}>
-                        {salvando ? 'Salvando...' : 'Cadastrar'}
+                <div className='modal-rodape'>
+                    <button className='botao-concluir' onClick={handleConcluir} disabled={loading}>
+                        {loading ? 'Salvando...' : 'Concluir'}
                     </button>
+                    <button className='botao-cancelar' onClick={onFechar}>Cancelar</button>
                 </div>
+
             </div>
         </div>
     )
 }
+
+export default ModalCadastrarInstituicao
