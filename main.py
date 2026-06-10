@@ -353,7 +353,7 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
     ).first()
     
     if not user:
-        return {"success": True}
+        return {"success": False, "not_found": True}
 
     token = secrets.token_urlsafe(32)
     user.token_recuperacao = token
@@ -414,7 +414,7 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
 
     background_tasks.add_task(enviar_email_smtp, user.email, subject, html_content, text_content)
     
-    return {"success": True, "link": link}
+    return {"success": True}
 
 
 @app.post("/api/password-reset/reset")
