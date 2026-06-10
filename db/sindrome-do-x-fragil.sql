@@ -64,6 +64,9 @@ CREATE TABLE paciente(
 	telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL,
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    foto_face VARCHAR(255) NULL,
+    foto_perfil_esq VARCHAR(255) NULL,
+    foto_perfil_dir VARCHAR(255) NULL,
     FOREIGN KEY (id_medico_responsavel)  REFERENCES medico(id),
     FOREIGN KEY (id_instituto) REFERENCES instituicao(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

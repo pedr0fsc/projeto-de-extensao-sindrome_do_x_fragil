@@ -8,7 +8,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import Depends, FastAPI, File, HTTPException, Request, BackgroundTasks, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -187,6 +187,9 @@ class Paciente(Base):
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
+    foto_face = Column(String(255), nullable=True)
+    foto_perfil_esq = Column(String(255), nullable=True)
+    foto_perfil_dir = Column(String(255), nullable=True)
     medico = relationship("Medico")
     instituicao = relationship("Instituicao")
 
@@ -602,6 +605,9 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
                 "data_nascimento": str(paciente.data_nascimento),
                 "telefone": paciente.telefone,
                 "email": paciente.email,
+                "foto_face": paciente.foto_face,
+                "foto_perfil_esq": paciente.foto_perfil_esq,
+                "foto_perfil_dir": paciente.foto_perfil_dir,
             },
         }
     medico = db.query(Medico).filter(Medico.id == paciente.id_medico_responsavel).first()
@@ -662,6 +668,9 @@ async def api_listar_pacientes(request: Request, db=Depends(get_db), _=Depends(r
             "data_nascimento": str(p.data_nascimento),
             "telefone": p.telefone,
             "email": p.email,
+            "foto_face": p.foto_face,
+            "foto_perfil_esq": p.foto_perfil_esq,
+            "foto_perfil_dir": p.foto_perfil_dir,
         }
         for p in pacientes
     ]
@@ -933,6 +942,60 @@ async def api_toggle_vinculo(id: int, id_instituto: int, request: Request, db=De
     db.commit()
     return {"success": True}
 
+@app.post("/api/paciente/{id}/fotos")
+async def api_upload_fotos_paciente(
+    id: int,
+    request: Request,
+    foto_face: UploadFile = File(default=None),
+    foto_perfil_esq: UploadFile = File(default=None),
+    foto_perfil_dir: UploadFile = File(default=None),
+    db=Depends(get_db),
+    _=Depends(require_auth),
+):
+    paciente = db.query(Paciente).filter(Paciente.id == id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    is_admin = request.session.get("tipo") == "Administrador"
+    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+        raise HTTPException(status_code=403, detail="Sem permissão")
+
+    pasta = f"uploads/pacientes/{id}"
+    os.makedirs(pasta, exist_ok=True)
+
+    EXTENSOES_PERMITIDAS = {"jpg", "jpeg", "png", "webp"}
+
+    async def salvar_foto(arquivo: UploadFile, nome: str):
+        if not arquivo or not arquivo.filename:
+            return None
+        ext = arquivo.filename.rsplit(".", 1)[-1].lower()
+        if ext not in EXTENSOES_PERMITIDAS:
+            raise HTTPException(status_code=400, detail=f"Formato inválido: {ext}")
+        caminho = f"{pasta}/{nome}.{ext}"
+        conteudo = await arquivo.read()
+        with open(caminho, "wb") as f:
+            f.write(conteudo)
+        return f"/{caminho}"
+
+    face_path = await salvar_foto(foto_face, "face")
+    esq_path = await salvar_foto(foto_perfil_esq, "perfil_esq")
+    dir_path = await salvar_foto(foto_perfil_dir, "perfil_dir")
+
+    if face_path is not None:
+        paciente.foto_face = face_path
+    if esq_path is not None:
+        paciente.foto_perfil_esq = esq_path
+    if dir_path is not None:
+        paciente.foto_perfil_dir = dir_path
+
+    db.commit()
+    return {
+        "success": True,
+        "foto_face": paciente.foto_face,
+        "foto_perfil_esq": paciente.foto_perfil_esq,
+        "foto_perfil_dir": paciente.foto_perfil_dir,
+    }
+
+
 @app.delete("/api/usuario/{id}")
 async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_admin)):
     user = db.query(Usuario).filter(Usuario.id == id).first()
@@ -979,6 +1042,10 @@ async def api_medicos(db=Depends(get_db)):
         for m in medicos
     ]
 
+
+# ── Uploads ──────────────────────────────────────────────────────────────────
+os.makedirs("uploads/pacientes", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── Static files / SPA ────────────────────────────────────────────────────────
 if os.path.exists("frontend/dist"):

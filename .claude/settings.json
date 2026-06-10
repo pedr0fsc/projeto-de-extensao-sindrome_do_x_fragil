@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\sophi\\\\OneDrive\\\\Documents\\\\BCC\\\\3semestre\" -Directory)",
+      "Read(//c/Users/sophi/OneDrive/Documents/BCC/3semestre/Exp�rienciaCriativa/ProjetoExtens�o/**)"
+    ]
+  }
+}
