@@ -73,7 +73,7 @@ class Medico(Base):
 class Paciente(Base):
     __tablename__ = "paciente"
     id = Column(Integer, primary_key=True)
-    id_medico_que_cadastrou = Column(Integer, ForeignKey("medico.id"), nullable=False)
+    id_medico_responsavel = Column(Integer, ForeignKey("medico.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
     sexo = Column(SQLEnum("Feminino", "Masculino"), nullable=False)
@@ -465,7 +465,7 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
     if not paciente:
         return {"found": False}
     is_admin = request.session.get("tipo") == "Administrador"
-    is_owner = paciente.id_medico_que_cadastrou == request.session.get("id_usuario")
+    is_owner = paciente.id_medico_responsavel == request.session.get("id_usuario")
     if is_admin or is_owner:
         return {
             "found": True,
@@ -479,7 +479,7 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
                 "email": paciente.email,
             },
         }
-    medico = db.query(Medico).filter(Medico.id == paciente.id_medico_que_cadastrou).first()
+    medico = db.query(Medico).filter(Medico.id == paciente.id_medico_responsavel).first()
     return {"found": True, "sem_acesso": True, "medico_nome": medico.usuario.nome if medico else "outro médico"}
 
 
@@ -491,7 +491,7 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
         raise HTTPException(status_code=400, detail="Médico não encontrado")
     cpf_limpo = body["cpf"].replace(".", "").replace("-", "")
     novo = Paciente(
-        id_medico_que_cadastrou=medico.id if medico else 1,
+        id_medico_responsavel=medico.id if medico else 1,
         cpf=cpf_limpo,
         nome=body["nome"],
         sexo=body["sexo"],
@@ -510,7 +510,7 @@ async def api_listar_pacientes(request: Request, db=Depends(get_db), _=Depends(r
         pacientes = db.query(Paciente).all()
     else:
         pacientes = db.query(Paciente).filter(
-            Paciente.id_medico_que_cadastrou == request.session.get("id_usuario")
+            Paciente.id_medico_responsavel == request.session.get("id_usuario")
         ).all()
     return [
         {
@@ -608,6 +608,32 @@ async def api_imprimir(triagem_id: int, db=Depends(get_db), _=Depends(require_au
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+@app.put("/api/triagem/{triagem_id}")
+async def api_editar_triagem(triagem_id: int, request: Request, db=Depends(get_db), _=Depends(require_auth)):
+    body = await request.json()
+    triagem = db.query(Triagem).filter(Triagem.id == triagem_id).first()
+    if not triagem:
+        raise HTTPException(status_code=404, detail="Consulta não encontrada")
+
+    is_admin = request.session.get("tipo") == "Administrador"
+    is_owner = triagem.id_medico == request.session.get("id_usuario")
+    if not (is_admin or is_owner):
+        raise HTTPException(status_code=403, detail="Sem permissão para editar esta consulta")
+
+    if body.get("data_consulta"):
+        try:
+            triagem.realizada_em = datetime.strptime(body["data_consulta"], "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    triagem.observacoes = body.get("observacoes", triagem.observacoes)
+    triagem.nome_responsavel = body.get("nome_responsavel", triagem.nome_responsavel)
+    triagem.grau_responsavel = body.get("grau_responsavel", triagem.grau_responsavel)
+
+    db.commit()
+    return {"success": True, "triagem_id": triagem.id}
 
 
 @app.get("/api/historico/{paciente_id}")
@@ -737,7 +763,7 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
 
     # Check permission (only owner or admin)
     is_admin = request.session.get("tipo") == "Administrador"
-    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+    if not is_admin and paciente.id_medico_responsavel != request.session.get("id_usuario"):
         raise HTTPException(status_code=403, detail="Sem permissão para editar este paciente")
 
     paciente.nome = body["nome"]
@@ -764,7 +790,7 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
 async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(require_admin)):
     body = await request.json()
     db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(
-        {"id_medico_que_cadastrou": body["novo_medico_id"]}
+        {"id_medico_responsavel": body["novo_medico_id"]}
     )
     db.commit()
     return {"success": True}
