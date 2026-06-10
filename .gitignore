@@ -34,5 +34,3 @@ __pycache__/
 
 # Docker
 .docker/
-
-.claude/
