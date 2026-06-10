@@ -26,6 +26,7 @@ services:
       # Tell MySQL container to set these up automatically
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # Initializes your DB using your .sql file
       - ./db/sindrome-do-x-fragil.sql:/docker-entrypoint-initdb.d/init.sql
