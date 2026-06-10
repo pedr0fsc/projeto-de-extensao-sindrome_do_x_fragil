@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
 import './alerta-estilos.css'
 
 type TipoAlerta = 'sucesso' | 'erro' | 'info'

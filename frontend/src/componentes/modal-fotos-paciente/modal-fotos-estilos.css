@@ -1,0 +1,121 @@
+@import "../../variaveis.css";
+
+.fotos-modal {
+    background: var(--cor-fundo);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(104, 178, 160, 0.2);
+    width: 90%;
+    max-width: 780px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+    padding: 28px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.fotos-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.fotos-modal-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cor-primaria);
+    margin: 0;
+}
+
+.fotos-modal-subtitulo {
+    font-size: 13px;
+    color: #666;
+    margin: 4px 0 0;
+}
+
+.fotos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.foto-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--cor-quaternaria);
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid rgba(104, 178, 160, 0.15);
+}
+
+.foto-card-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cor-primaria);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.foto-card-img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(104, 178, 160, 0.2);
+}
+
+.foto-card-placeholder {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    border: 2px dashed rgba(44, 105, 117, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.foto-placeholder-icone {
+    width: 32px;
+    height: 32px;
+    opacity: 0.35;
+}
+
+.fotos-sem-registros {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    color: #888;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.fotos-sem-registros .foto-placeholder-icone {
+    width: 40px;
+    height: 40px;
+    opacity: 0.4;
+}
+
+@media (max-width: 600px) {
+    .fotos-modal {
+        padding: 20px 16px 24px;
+    }
+
+    .fotos-grid {
+        grid-template-columns: 1fr;
+    }
+}

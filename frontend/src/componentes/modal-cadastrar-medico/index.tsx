@@ -17,9 +17,19 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
     const [crm, setCrm] = useState('')
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
     const [loading, setLoading] = useState(false)
+    const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
+    const erros = {
+        nome: !nome.trim(),
+        email: !email.trim(),
+        cpf: limparFormatacao(cpf).length !== 11,
+        senha: !senha,
+    }
+
     const handleConcluir = async () => {
+        setTentouSubmit(true)
+        if (Object.values(erros).some(Boolean)) return
         setLoading(true)
         try {
             const response = await fetch('/api/usuario', {
@@ -61,31 +71,46 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
 
                 <div className='modal-corpo'>
                     <div className='form-campo'>
-                        <label>Nome completo</label>
-                        <input type="text" value={nome} onChange={e => setNome(e.target.value)} />
+                        <label>Nome completo *</label>
+                        <input
+                            type="text"
+                            value={nome}
+                            onChange={e => setNome(e.target.value)}
+                            className={tentouSubmit && erros.nome ? 'input-erro' : ''}
+                        />
+                        {tentouSubmit && erros.nome && <p className='campo-erro-msg'>Nome é obrigatório</p>}
                     </div>
                     <div className='form-campo'>
-                        <label>E-mail</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <label>E-mail *</label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            className={tentouSubmit && erros.email ? 'input-erro' : ''}
+                        />
+                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail é obrigatório</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
-                            <label>CPF</label>
-                            <input 
-                                type="text" 
-                                value={cpf} 
-                                onChange={e => setCpf(formatarCPF(e.target.value))} 
+                            <label>CPF *</label>
+                            <input
+                                type="text"
+                                value={cpf}
+                                onChange={e => setCpf(formatarCPF(e.target.value))}
                                 maxLength={14}
                                 placeholder="000.000.000-00"
+                                className={tentouSubmit && erros.cpf ? 'input-erro' : ''}
                             />
+                            {tentouSubmit && erros.cpf && <p className='campo-erro-msg'>CPF inválido</p>}
                         </div>
                         <div className='form-campo'>
-                            <label>Senha</label>
+                            <label>Senha *</label>
                             <div className='password-input-wrapper'>
-                                <input 
-                                    type={mostrarSenha ? 'text' : 'password'} 
-                                    value={senha} 
-                                    onChange={e => setSenha(e.target.value)} 
+                                <input
+                                    type={mostrarSenha ? 'text' : 'password'}
+                                    value={senha}
+                                    onChange={e => setSenha(e.target.value)}
+                                    className={tentouSubmit && erros.senha ? 'input-erro' : ''}
                                 />
                                 <button 
                                     type="button" 
@@ -105,6 +130,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                     )}
                                 </button>
                             </div>
+                            {tentouSubmit && erros.senha && <p className='campo-erro-msg'>Senha é obrigatória</p>}
                         </div>
                     </div>
                     <div className='form-linha'>
