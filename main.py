@@ -24,9 +24,7 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
-from dotenv import load_dotenv
-load_dotenv()
-
+<<<<<<<<< Temporary merge branch 1
 
 
 def init_db():
@@ -479,8 +477,8 @@ async def api_login(request: Request, db=Depends(get_db)):
 
 
 
-
-
+=========
+>>>>>>>>> Temporary merge branch 2
 @app.post("/api/logout")
 async def api_logout(request: Request):
     request.session.clear()
@@ -677,6 +675,32 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     medico = db.query(Medico).filter(Medico.id == request.session.get("id_usuario")).first()
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
+
+<<<<<<<<< Temporary merge branch 1
+    id_instituto = body.get("id_instituto")
+    if id_instituto is not None:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
+    else:
+        inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
+        instituicao = db.query(Instituicao).filter(Instituicao.id == inst_ids[0]).first() if inst_ids else get_default_instituicao(db)
+=========
+    instituicao = None
+    id_instituto = body.get("id_instituto")
+    if id_instituto is not None:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
+    elif medico and medico.id_instituto:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == medico.id_instituto).first()
+    else:
+        instituicao = get_default_instituicao(db)
+>>>>>>>>> Temporary merge branch 2
+
+    if not instituicao:
+        raise HTTPException(status_code=400, detail="Instituição não encontrada")
+
+    medico_responsavel = medico or db.query(Medico).order_by(Medico.id).first()
+    if not medico_responsavel:
+        raise HTTPException(status_code=400, detail="Nenhum médico disponível para vincular o paciente")
+
     cpf_limpo = body["cpf"].replace(".", "").replace("-", "")
     novo = Paciente(
         id_medico_responsavel=medico_responsavel.id,
@@ -1059,9 +1083,18 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
 @app.post("/api/paciente/trocar_medico")
 async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(require_admin)):
     body = await request.json()
-    db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(
-        {"id_medico_responsavel": body["novo_medico_id"]}
-    )
+<<<<<<<<< Temporary merge branch 1
+    inst_ids = get_institutos_medico(db, body["novo_medico_id"])
+    update_data = {"id_medico_responsavel": body["novo_medico_id"]}
+    if inst_ids:
+        update_data["id_instituto"] = inst_ids[0]
+=========
+    novo_medico = db.query(Medico).filter(Medico.id == body["novo_medico_id"]).first()
+    update_data = {"id_medico_responsavel": body["novo_medico_id"]}
+    if novo_medico and novo_medico.id_instituto:
+        update_data["id_instituto"] = novo_medico.id_instituto
+>>>>>>>>> Temporary merge branch 2
+    db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(update_data)
     db.commit()
     return {"success": True}
 
@@ -1079,6 +1112,15 @@ async def api_medicos(db=Depends(get_db)):
             "telefone": m.usuario.telefone,
             "tipo": m.usuario.tipo,
             "ativo": bool(m.usuario.ativo),
+<<<<<<<<< Temporary merge branch 1
+            "vinculos": [
+                {"id_instituto": v.id_instituto, "ativo": bool(v.vinculo_ativo)}
+                for v in db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == m.id).all()
+            ],
+=========
+            "id_instituto": m.id_instituto,
+            "instituicao": m.instituicao.nome_fantasia if m.instituicao else None,
+>>>>>>>>> Temporary merge branch 2
         }
         for m in medicos
     ]
