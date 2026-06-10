@@ -23,9 +23,6 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
-from dotenv import load_dotenv
-load_dotenv()
-
 
 
 def init_db():
@@ -156,11 +153,33 @@ class Medico(Base):
     crm = Column(String(13), unique=True, nullable=False)
     usuario = relationship("Usuario")
 
+class InstitutoMedico(Base):
+    __tablename__ = "instituto_medico"
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), primary_key=True)
+    id_medico = Column(Integer, ForeignKey("medico.id"), primary_key=True)
+    vinculo_ativo = Column(Boolean, default=True)
+
+
+class Instituicao(Base):
+    __tablename__ = "instituicao"
+    id = Column(Integer, primary_key=True)
+    nome_fantasia = Column(String(150), nullable=False)
+    nome = Column(String(500))
+    rua = Column(String(150), nullable=False)
+    numero = Column(String(10), nullable=False)
+    complemento = Column(String(100))
+    bairro = Column(String(100), nullable=False)
+    cidade = Column(String(100), nullable=False)
+    estado = Column(String(2), nullable=False)
+    cep = Column(String(9), nullable=False)
+    cnpj = Column(String(18), nullable=False, unique=True)
+
 
 class Paciente(Base):
     __tablename__ = "paciente"
     id = Column(Integer, primary_key=True)
     id_medico_responsavel = Column(Integer, ForeignKey("medico.id"), nullable=False)
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
     sexo = Column(SQLEnum("Feminino", "Masculino"), name='sexo_biologico', nullable=False)
@@ -169,6 +188,7 @@ class Paciente(Base):
     email = Column(String(150), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
     medico = relationship("Medico")
+    instituicao = relationship("Instituicao")
 
 
 class Sintoma(Base):
@@ -262,6 +282,10 @@ def calcular_score(sintomas_marcados: dict, sexo: str, db) -> float:
         if sintomas_marcados.get(str(s.id))
     )
     return round(score, 3)
+
+
+def get_default_instituicao(db):
+    return db.query(Instituicao).order_by(Instituicao.id).first()
 
 
 def enviar_email_smtp(to_email: str, subject: str, html_content: str, text_content: str = "") -> bool:
@@ -393,6 +417,22 @@ def gerar_pdf(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -
     buffer.seek(0)
     return buffer
 
+def get_institutos_medico(db, id_medico):
+    rows = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id_medico,
+        InstitutoMedico.vinculo_ativo == True
+    ).all()
+    return [r.id_instituto for r in rows]
+
+def sincronizar_ativo_medico(db, id_medico):
+    tem_vinculo_ativo = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id_medico,
+        InstitutoMedico.vinculo_ativo == True
+    ).first()
+    db.query(Usuario).filter(Usuario.id == id_medico).update(
+        {"ativo": bool(tem_vinculo_ativo)}
+    )
+
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.post("/api/login")
@@ -413,8 +453,6 @@ async def api_login(request: Request, db=Depends(get_db)):
         "tipo": user.tipo,
     })
     return {"success": True, "tipo": user.tipo, "nome": user.nome}
-
-
 
 
 
@@ -551,7 +589,9 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
         return {"found": False}
     is_admin = request.session.get("tipo") == "Administrador"
     is_owner = paciente.id_medico_responsavel == request.session.get("id_usuario")
-    if is_admin or is_owner:
+    inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
+    same_inst = paciente.id_instituto in inst_ids
+    if is_admin or is_owner or same_inst:
         return {
             "found": True,
             "paciente": {
@@ -574,9 +614,25 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     medico = db.query(Medico).filter(Medico.id == request.session.get("id_usuario")).first()
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
+
+    id_instituto = body.get("id_instituto")
+    if id_instituto is not None:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
+    else:
+        inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
+        instituicao = db.query(Instituicao).filter(Instituicao.id == inst_ids[0]).first() if inst_ids else get_default_instituicao(db)
+
+    if not instituicao:
+        raise HTTPException(status_code=400, detail="Instituição não encontrada")
+
+    medico_responsavel = medico or db.query(Medico).order_by(Medico.id).first()
+    if not medico_responsavel:
+        raise HTTPException(status_code=400, detail="Nenhum médico disponível para vincular o paciente")
+
     cpf_limpo = body["cpf"].replace(".", "").replace("-", "")
     novo = Paciente(
-        id_medico_responsavel=medico.id if medico else 1,
+        id_medico_responsavel=medico_responsavel.id,
+        id_instituto=instituicao.id,
         cpf=cpf_limpo,
         nome=body["nome"],
         sexo=body["sexo"],
@@ -862,12 +918,30 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
     db.commit()
     return {"success": True}
 
+@app.put("/api/usuario/{id}/instituto/{id_instituto}/ativo")
+async def api_toggle_vinculo(id: int, id_instituto: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()  # {"ativo": true/false}
+    vinculo = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id,
+        InstitutoMedico.id_instituto == id_instituto
+    ).first()
+    if not vinculo:
+        raise HTTPException(status_code=404, detail="Vínculo não encontrado")
+    vinculo.vinculo_ativo = body.get("ativo", False)
+    db.flush()
+    sincronizar_ativo_medico(db, id)
+    db.commit()
+    return {"success": True}
 
 @app.delete("/api/usuario/{id}")
 async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_admin)):
     user = db.query(Usuario).filter(Usuario.id == id).first()
     if user:
         user.ativo = False
+        if user.tipo == "Médico":
+            db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == id).update(
+                {"vinculo_ativo": False}
+            )
         db.commit()
     return {"success": True}
 
@@ -875,9 +949,11 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
 @app.post("/api/paciente/trocar_medico")
 async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(require_admin)):
     body = await request.json()
-    db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(
-        {"id_medico_responsavel": body["novo_medico_id"]}
-    )
+    inst_ids = get_institutos_medico(db, body["novo_medico_id"])
+    update_data = {"id_medico_responsavel": body["novo_medico_id"]}
+    if inst_ids:
+        update_data["id_instituto"] = inst_ids[0]
+    db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(update_data)
     db.commit()
     return {"success": True}
 
@@ -895,6 +971,10 @@ async def api_medicos(db=Depends(get_db)):
             "telefone": m.usuario.telefone,
             "tipo": m.usuario.tipo,
             "ativo": bool(m.usuario.ativo),
+            "vinculos": [
+                {"id_instituto": v.id_instituto, "ativo": bool(v.vinculo_ativo)}
+                for v in db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == m.id).all()
+            ],
         }
         for m in medicos
     ]

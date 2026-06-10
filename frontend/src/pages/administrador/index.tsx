@@ -177,6 +177,7 @@ export function PaginaAdministrador() {
                 return {
                     medico: m.nome,
                     crm: m.crm,
+                    ativo: m.ativo,
                     consultas: triagensMedico.length,
                     pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
                 }
@@ -383,7 +384,7 @@ export function PaginaAdministrador() {
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Médicos</span>
                                     <span className='dashboard-card-valor'>{stats.totalMedicos}</span>
-                                    <span className='dashboard-card-sub'>Ativos no sistema</span>
+                                    <span className='dashboard-card-sub'>Cadastrados no sistema</span>
                                 </div>
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Pacientes</span>
@@ -422,7 +423,9 @@ export function PaginaAdministrador() {
                                                 <td>{a.consultas}</td>
                                                 <td>{a.pacientes}</td>
                                                 <td>
-                                                    <span className='status-badge status-ativo'>Ativo</span>
+                                                    <span className={`status-badge ${a.ativo ? 'status-ativo' : 'status-inativo'}`}>
+                                                        {a.ativo ? 'Ativo' : 'Inativo'}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))}
