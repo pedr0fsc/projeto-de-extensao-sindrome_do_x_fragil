@@ -20,6 +20,7 @@ CREATE TABLE usuario(
     nome VARCHAR(150) NOT NULL,
     cpf VARCHAR(14) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     tipo ENUM('Médico','Administrador') NOT NULL,
@@ -28,11 +29,13 @@ CREATE TABLE usuario(
     token_expiracao DATETIME,
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE medico(
 	id INT PRIMARY KEY, 
     crm VARCHAR(13) NOT NULL UNIQUE,
     FOREIGN KEY (id) REFERENCES usuario(id)
 );
+
 CREATE TABLE instituto_medico (
     id_instituto INT NOT NULL,
     id_medico INT NOT NULL,
@@ -55,9 +58,9 @@ CREATE TABLE paciente(
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_medico_responsavel)  REFERENCES medico(id),
     FOREIGN KEY (id_instituto) REFERENCES instituicao(id)
-    
 
 );
+
 CREATE TABLE foto_paciente(
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	id_paciente INT NOT NULL,
@@ -67,7 +70,6 @@ CREATE TABLE foto_paciente(
      FOREIGN KEY (id_paciente) REFERENCES paciente(id)
 
 );
-
 
 CREATE TABLE triagem(
 	id INT AUTO_INCREMENT PRIMARY KEY,

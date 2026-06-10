@@ -76,7 +76,7 @@ class Paciente(Base):
     id_medico_responsavel = Column(Integer, ForeignKey("medico.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
-    sexo = Column(SQLEnum("Feminino", "Masculino"), nullable=False)
+    sexo = Column(SQLEnum("Feminino", "Masculino"), name='sexo_biologico', nullable=False)
     data_nascimento = Column(Date, nullable=False)
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
@@ -353,7 +353,7 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
     ).first()
     
     if not user:
-        return {"success": True}
+        return {"success": False, "not_found": True}
 
     token = secrets.token_urlsafe(32)
     user.token_recuperacao = token
@@ -370,8 +370,6 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
             link = f"{request.url.scheme}://{request.url.netloc}/recuperar-senha?token={token}"
     else:
         link = f"{request.url.scheme}://{request.url.netloc}/recuperar-senha?token={token}"
-
-    print(f"[EMAIL RECUPERAÇÃO] Link gerado: {link}")
 
     subject = "Recuperação de Senha - Plataforma de Triagem SXF"
     
@@ -414,7 +412,7 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
 
     background_tasks.add_task(enviar_email_smtp, user.email, subject, html_content, text_content)
     
-    return {"success": True, "link": link}
+    return {"success": True}
 
 
 @app.post("/api/password-reset/reset")

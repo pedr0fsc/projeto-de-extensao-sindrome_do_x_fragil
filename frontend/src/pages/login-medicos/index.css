@@ -39,13 +39,12 @@
 .login-container {
     display: flex;
     flex: 1;
-    min-height: 100vh;
 }
 
 .login-painel-esquerdo {
     background-color: var(--cor-primaria);
     width: 45%;
-    min-height: 100vh;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     padding: 48px 40px;

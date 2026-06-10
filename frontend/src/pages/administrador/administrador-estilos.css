@@ -131,6 +131,7 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+    flex: 1;
 }
 
 .admin-secao {
