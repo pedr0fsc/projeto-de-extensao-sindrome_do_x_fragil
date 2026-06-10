@@ -67,10 +67,26 @@ class Medico(Base):
     usuario = relationship("Usuario")
 
 
+class Instituicao(Base):
+    __tablename__ = "instituicao"
+    id = Column(Integer, primary_key=True)
+    nome_fantasia = Column(String(150), nullable=False)
+    nome = Column(String(500))
+    rua = Column(String(150), nullable=False)
+    numero = Column(String(10), nullable=False)
+    complemento = Column(String(100))
+    bairro = Column(String(100), nullable=False)
+    cidade = Column(String(100), nullable=False)
+    estado = Column(String(2), nullable=False)
+    cep = Column(String(9), nullable=False)
+    cnpj = Column(String(18), nullable=False, unique=True)
+
+
 class Paciente(Base):
     __tablename__ = "paciente"
     id = Column(Integer, primary_key=True)
     id_medico_responsavel = Column(Integer, ForeignKey("medico.id"), nullable=False)
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
     sexo = Column(SQLEnum("Feminino", "Masculino"), name='sexo_biologico', nullable=False)
@@ -79,6 +95,7 @@ class Paciente(Base):
     email = Column(String(150), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
     medico = relationship("Medico")
+    instituicao = relationship("Instituicao")
 
 
 class Sintoma(Base):
@@ -172,6 +189,10 @@ def calcular_score(sintomas_marcados: dict, sexo: str, db) -> float:
         if sintomas_marcados.get(str(s.id))
     )
     return round(score, 3)
+
+
+def get_default_instituicao(db):
+    return db.query(Instituicao).order_by(Instituicao.id).first()
 
 
 def enviar_email_smtp(to_email: str, subject: str, html_content: str, text_content: str = "") -> bool:
@@ -484,9 +505,25 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     medico = db.query(Medico).filter(Medico.id == request.session.get("id_usuario")).first()
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
+
+    instituicao = None
+    id_instituto = body.get("id_instituto")
+    if id_instituto is not None:
+        instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
+    else:
+        instituicao = get_default_instituicao(db)
+
+    if not instituicao:
+        raise HTTPException(status_code=400, detail="Instituição não encontrada")
+
+    medico_responsavel = medico or db.query(Medico).order_by(Medico.id).first()
+    if not medico_responsavel:
+        raise HTTPException(status_code=400, detail="Nenhum médico disponível para vincular o paciente")
+
     cpf_limpo = body["cpf"].replace(".", "").replace("-", "")
     novo = Paciente(
-        id_medico_responsavel=medico.id if medico else 1,
+        id_medico_responsavel=medico_responsavel.id,
+        id_instituto=instituicao.id,
         cpf=cpf_limpo,
         nome=body["nome"],
         sexo=body["sexo"],
