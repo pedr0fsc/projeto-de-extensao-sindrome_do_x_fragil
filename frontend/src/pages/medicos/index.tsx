@@ -395,7 +395,7 @@ export function PaginaMedicos() {
                                         <tr>
                                             <th>Nome</th>
                                             <th>Idade</th>
-                                            <th>Gênero</th>
+                                            <th>Sexo Biológico</th>
                                             <th>Nascimento</th>
                                             <th>CPF</th>
                                             <th>Ações</th>

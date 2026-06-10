@@ -1,5 +1,4 @@
 import { LoginMedico } from '../../componentes/login-medico'
-import { Footer } from '../../componentes/footer'
 import medicoImg from '../../assets/medico.png'
 import './index.css'
 
@@ -29,7 +28,6 @@ export function LoginMedicos() {
                     <LoginMedico />
                 </div>
             </div>
-            <Footer />
         </div>
     )
 }

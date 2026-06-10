@@ -27,6 +27,7 @@ interface Medico {
     cpf: string
     telefone: string
     tipo: string
+    ativo: boolean
 }
 
 interface Paciente {
@@ -141,6 +142,35 @@ export function PaginaAdministrador() {
         else { setSortPacientesField(field); setSortPacientesOrder('asc') }
     }
 
+    const alternarStatusMedico = async (medico: Medico) => {
+        try {
+            const response = await fetch(`/api/usuario/${medico.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome: medico.nome,
+                    email: medico.email,
+                    cpf: medico.cpf,
+                    telefone: medico.telefone,
+                    tipo: medico.tipo,
+                    crm: medico.crm,
+                    ativo: !medico.ativo,
+                }),
+            })
+
+            const data = await response.json()
+            if (!response.ok || !data.success) {
+                alert('Não foi possível alterar o status do médico.')
+                return
+            }
+
+            await fetchData()
+        } catch (err) {
+            console.error('Erro ao alterar status do médico:', err)
+            alert('Erro de conexão ao alterar status do médico.')
+        }
+    }
+
     // ── Filtered + sorted lists ──────────────────────────────────────────────
 
     // Dashboard: médicos activity table filtered by dashboard search
@@ -152,6 +182,7 @@ export function PaginaAdministrador() {
                 return {
                     medico: m.nome,
                     crm: m.crm,
+                    ativo: m.ativo,
                     consultas: triagensMedico.length,
                     pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
                 }
@@ -358,7 +389,7 @@ export function PaginaAdministrador() {
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Médicos</span>
                                     <span className='dashboard-card-valor'>{stats.totalMedicos}</span>
-                                    <span className='dashboard-card-sub'>Ativos no sistema</span>
+                                    <span className='dashboard-card-sub'>Cadastrados no sistema</span>
                                 </div>
                                 <div className='dashboard-card dashboard-card-destaque'>
                                     <span className='dashboard-card-titulo'>Total de Pacientes</span>
@@ -397,7 +428,9 @@ export function PaginaAdministrador() {
                                                 <td>{a.consultas}</td>
                                                 <td>{a.pacientes}</td>
                                                 <td>
-                                                    <span className='status-badge status-ativo'>Ativo</span>
+                                                    <span className={`status-badge ${a.ativo ? 'status-ativo' : 'status-inativo'}`}>
+                                                        {a.ativo ? 'Ativo' : 'Inativo'}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))}
@@ -458,6 +491,7 @@ export function PaginaAdministrador() {
                                             <th>Nome</th>
                                             <th>Tipo</th>
                                             <th>CRM (se médico)</th>
+                                            <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
@@ -467,6 +501,16 @@ export function PaginaAdministrador() {
                                                 <td>{m.nome}</td>
                                                 <td>{m.tipo}</td>
                                                 <td>{m.crm || '-'}</td>
+                                                <td>
+                                                    <label className='admin-switch'>
+                                                        <input
+                                                            type='checkbox'
+                                                            checked={m.ativo}
+                                                            onChange={() => alternarStatusMedico(m)}
+                                                        />
+                                                        <span>{m.ativo ? 'Ativo' : 'Inativo'}</span>
+                                                    </label>
+                                                </td>
                                                 <td>
                                                     <div className='acoes-celula'>
                                                         <button
@@ -506,7 +550,7 @@ export function PaginaAdministrador() {
                                         <tr>
                                             <th>Nome</th>
                                             <th>Idade</th>
-                                            <th>Gênero</th>
+                                            <th>Sexo Biológico</th>
                                             <th>Nascimento</th>
                                             <th>CPF</th>
                                             <th>Ações</th>
