@@ -24,7 +24,6 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
-<<<<<<<<< Temporary merge branch 1
 
 
 def init_db():
