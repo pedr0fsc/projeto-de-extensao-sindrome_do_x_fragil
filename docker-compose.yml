@@ -6,24 +6,8 @@ services:
     ports:
       - "${PORT}:${PORT}"
     depends_on:
-      - database
-    # This tells Docker to load variables from your .env file
-    env_file:
-      - .env
-    environment:
-      # We tell the backend to look for the 'database' service on the network
-      - DB_HOST=database
-
-  # This is your MySQL Database
-  database:
-  # This is your Python + React application
-  api:
-    build: .
-    # Maps the port from your .env (3001) to the container
-    ports:
-      - "${PORT}:${PORT}"
-    depends_on:
-      - database
+      database:
+        condition: service_healthy # Wait for the DB to be healthy
     # This tells Docker to load variables from your .env file
     env_file:
       - .env
@@ -34,17 +18,26 @@ services:
   # This is your MySQL Database
   database:
     image: mysql:8.0
+    restart: always
     # Use the same .env file for the DB container
     env_file:
       - .env
-    # Use the same .env file for the DB container
-    env_file:
-      - .env
+    environment:
+      # Tell MySQL container to set these up automatically
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       # Initializes your DB using your .sql file
-      - ./db/your_file.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/sindrome-do-x-fragil.sql:/docker-entrypoint-initdb.d/init.sql
       # Persists your data so it isn't lost on restart
       - db_data:/var/lib/mysql
+    # Add this healthcheck!
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   db_data:

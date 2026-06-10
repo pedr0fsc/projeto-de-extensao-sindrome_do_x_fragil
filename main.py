@@ -12,12 +12,12 @@ from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+import time
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, DECIMAL, ForeignKey,
-    Integer, String, Text, Enum as SQLEnum, create_engine,
+    Integer, String, Text, Enum as SQLEnum, create_engine, inspect
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
@@ -25,8 +25,95 @@ from reportlab.pdfgen import canvas
 from mangum import Mangum
 
 
+def init_db():
+    print("--- [DB] Aguardando conexão com o banco de dados... ---")
+    retries = 10
+    while retries > 0:
+        try:
+            # Try to connect and create tables
+            Base.metadata.create_all(bind=engine)
+            
+            # Confirm table creation in logs
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            print(f"--- [DB] Tabelas confirmadas: {', '.join(tables)} ---")
+            return
+        except Exception as e:
+            retries -= 1
+            print(f"--- [DB CONNECT] Banco de dados ainda não está pronto (Tentativas restantes: {retries}) ---")
+            if retries == 0:
+                print(f"--- [DB FATAL ERROR] Erro final ao conectar: {e} ---")
+                raise e
+            time.sleep(5)
+
+
+def init_seed_data():
+    db = SessionLocal()
+    try:
+        # Seed Sintomas
+        if db.query(Sintoma).count() == 0:
+            print("--- [SEED] Populando tabela de sintomas ---")
+            sintomas_data = [
+                ("Deficiência intelectual", 0.20, 0.32),
+                ("Face alongada/orelhas", 0.09, 0.29),
+                ("Macroorquidismo", None, 0.26),
+                ("Hipermobilidade articular", 0.04, 0.19),
+                ("Dificuldades de aprendizagem", 0.28, 0.18),
+                ("Déficit de atenção", 0.12, 0.17),
+                ("Mov. repetitivos", 0.05, 0.17),
+                ("Atraso na fala", 0.01, 0.14),
+                ("Hiperatividade", 0.04, 0.12),
+                ("Evita contato visual", 0.08, 0.06),
+                ("Evita contato físico", 0.07, 0.04),
+                ("Agressividade", 0.02, 0.01)
+            ]
+            for nome, pf, pm in sintomas_data:
+                db.add(Sintoma(nome=nome, peso_feminino=pf, peso_masculino=pm))
+            db.commit()
+
+        # Seed Limiares
+        if db.query(Limiar).count() == 0:
+            print("--- [SEED] Populando tabela de limiares ---")
+            db.add(Limiar(sexo="Masculino", valor=0.56))
+            db.add(Limiar(sexo="Feminino", valor=0.55))
+            db.commit()
+            
+    except Exception as e:
+        print(f"--- [SEED ERROR] Falha ao popular dados: {e} ---")
+    finally:
+        db.close()
+
+
+def init_admin():
+    # Use a direct engine connection for initialization
+    db = SessionLocal()
+    try:
+        # Check if any admin exists
+        admin = db.query(Usuario).filter(Usuario.tipo == "Administrador").first()
+        if not admin:
+            print("--- [SEED] Criando administrador inicial ---")
+            admin_user = Usuario(
+                nome="Administrador",
+                cpf=os.getenv("ADMIN_CPF"),
+                senha=hash_senha(os.getenv("ADMIN_PASSWORD")),
+                ativo=True,
+                telefone="0000000000",
+                email=os.getenv("ADMIN_EMAIL"),
+                tipo="Administrador",
+            )
+            db.add(admin_user)
+            db.commit()
+            print("--- [SEED] Administrador criado com sucesso ---")
+        else:
+            print("--- [SEED] Administrador já existente, pulando criação ---")
+    except Exception as e:
+        print(f"--- [SEED ERROR] Falha ao criar admin: {e} ---")
+    finally:
+        db.close()
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI()
+app = FastAPI(on_startup=[init_db, init_seed_data, init_admin])
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY"),
@@ -37,7 +124,7 @@ app.add_middleware(
 # ── Database ──────────────────────────────────────────────────────────────────
 DATABASE_URL = (
     f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
-    f"@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+    f"@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}?charset=utf8mb4"
 )
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
@@ -909,3 +996,9 @@ else:
     print("frontend/dist não encontrado - Rodando sem React")
 
 handler = Mangum(app)
+
+if __name__ == "__main__":
+    import uvicorn
+    # Get the port from environment variables, defaulting to 3001
+    port = int(os.getenv("PORT", 3001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
