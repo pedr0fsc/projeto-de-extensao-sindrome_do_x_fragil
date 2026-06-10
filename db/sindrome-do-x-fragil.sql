@@ -23,6 +23,7 @@ CREATE TABLE usuario(
     telefone VARCHAR(24) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     tipo ENUM('Médico','Administrador') NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
     token_recuperacao VARCHAR(100) UNIQUE,
     token_expiracao DATETIME,
 	criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP

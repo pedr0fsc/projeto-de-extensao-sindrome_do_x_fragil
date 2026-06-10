@@ -733,13 +733,14 @@ async def api_atualizar_usuario(id: int, request: Request, db=Depends(get_db), _
     user = db.query(Usuario).filter(Usuario.id == id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    
+
     user.nome = body["nome"]
     user.email = body["email"]
     user.cpf = body["cpf"].replace(".", "").replace("-", "")
     user.telefone = body["telefone"].replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
     user.tipo = body["tipo"]
-    
+    user.ativo = body.get("ativo", user.ativo)
+
     if body.get("senha"):
         user.senha = hash_senha(body["senha"])
         
@@ -798,16 +799,17 @@ async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(requ
 
 @app.get("/api/medicos")
 async def api_medicos(db=Depends(get_db)):
-    medicos = db.query(Medico).join(Usuario).filter(Usuario.ativo == True).all()
+    medicos = db.query(Medico).join(Usuario).all()
     return [
         {
-            "id": m.id, 
-            "nome": m.usuario.nome, 
+            "id": m.id,
+            "nome": m.usuario.nome,
             "crm": m.crm,
             "email": m.usuario.email,
             "cpf": m.usuario.cpf,
             "telefone": m.usuario.telefone,
-            "tipo": m.usuario.tipo
+            "tipo": m.usuario.tipo,
+            "ativo": bool(m.usuario.ativo),
         }
         for m in medicos
     ]

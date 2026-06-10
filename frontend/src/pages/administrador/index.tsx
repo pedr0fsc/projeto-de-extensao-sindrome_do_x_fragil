@@ -26,6 +26,7 @@ interface Medico {
     cpf: string
     telefone: string
     tipo: string
+    ativo: boolean
 }
 
 interface Paciente {
@@ -134,6 +135,35 @@ export function PaginaAdministrador() {
     const handleSortPacientes = (field: SortPacientesField) => {
         if (sortPacientesField === field) setSortPacientesOrder(o => (o === 'asc' ? 'desc' : 'asc'))
         else { setSortPacientesField(field); setSortPacientesOrder('asc') }
+    }
+
+    const alternarStatusMedico = async (medico: Medico) => {
+        try {
+            const response = await fetch(`/api/usuario/${medico.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome: medico.nome,
+                    email: medico.email,
+                    cpf: medico.cpf,
+                    telefone: medico.telefone,
+                    tipo: medico.tipo,
+                    crm: medico.crm,
+                    ativo: !medico.ativo,
+                }),
+            })
+
+            const data = await response.json()
+            if (!response.ok || !data.success) {
+                alert('Não foi possível alterar o status do médico.')
+                return
+            }
+
+            await fetchData()
+        } catch (err) {
+            console.error('Erro ao alterar status do médico:', err)
+            alert('Erro de conexão ao alterar status do médico.')
+        }
     }
 
     // ── Filtered + sorted lists ──────────────────────────────────────────────
@@ -453,6 +483,7 @@ export function PaginaAdministrador() {
                                             <th>Nome</th>
                                             <th>Tipo</th>
                                             <th>CRM (se médico)</th>
+                                            <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
@@ -462,6 +493,16 @@ export function PaginaAdministrador() {
                                                 <td>{m.nome}</td>
                                                 <td>{m.tipo}</td>
                                                 <td>{m.crm || '-'}</td>
+                                                <td>
+                                                    <label className='admin-switch'>
+                                                        <input
+                                                            type='checkbox'
+                                                            checked={m.ativo}
+                                                            onChange={() => alternarStatusMedico(m)}
+                                                        />
+                                                        <span>{m.ativo ? 'Ativo' : 'Inativo'}</span>
+                                                    </label>
+                                                </td>
                                                 <td>
                                                     <div className='acoes-celula'>
                                                         <button
