@@ -1,4 +1,4 @@
-CREATE DATABASE sxf_triagem_db;
+
 USE sxf_triagem_db;
 
 CREATE TABLE instituicao(
