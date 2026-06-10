@@ -25,7 +25,6 @@
     border: 2px solid var(--cor-fundo);
     border-radius: 20px;
     padding: 8px 20px;
-    cursor: pointer;
     font-family: "Nunito", sans-serif;
     font-size: 14px;
     color: var(--cor-texto);
@@ -37,21 +36,15 @@
     height: 20px;
 }
 
-.btn-nav-login:hover {
-    background-color: var(--cor-secundaria);
-    color: white;
-}
-
 .login-container {
     display: flex;
     flex: 1;
-    min-height: 100vh;
 }
 
 .login-painel-esquerdo {
     background-color: var(--cor-primaria);
     width: 45%;
-    min-height: 100vh;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     padding: 48px 40px;

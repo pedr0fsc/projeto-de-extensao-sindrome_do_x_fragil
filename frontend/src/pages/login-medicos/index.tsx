@@ -1,4 +1,4 @@
-import { LoginMedico } from '../../componentes/login-médico'
+import { LoginMedico } from '../../componentes/login-medico'
 import medicoImg from '../../assets/medico.png'
 import './index.css'
 
@@ -6,14 +6,14 @@ export function LoginMedicos() {
     return (
         <div className='pagina-login'>
             <nav className='nav-login'>
-                <button className='btn-nav-login'>
+                <label className='btn-nav-login'>
                     <img src={medicoImg} alt="" />
                     Médicos
-                </button>
+                </label>
             </nav>
             <div className='login-container'>
                 <div className='login-painel-esquerdo'>
-                    <h1 className='login-titulo-painel'>Médicos</h1>
+                    <h1 className='login-titulo-painel'>Seja Bem-Vindo!</h1>
                     <div className='login-decoracao'>
                         <div className='circulo-externo'>
                             <div className='circulo-medio'>

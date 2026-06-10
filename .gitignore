@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+__pycache__/
+*.pyc
 
 # Editor directories and files
 .vscode/*
@@ -29,10 +31,6 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Database (Prisma e SQLite se usar para testes)
-/backend/prisma/dev.db
-/backend/prisma/dev.db-journal
 
 # Docker
 .docker/

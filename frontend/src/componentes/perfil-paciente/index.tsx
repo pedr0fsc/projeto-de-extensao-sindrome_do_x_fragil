@@ -59,7 +59,7 @@ export function PerfilPaciente({ paciente, onFechar }: Props) {
                             <span className='perfil-dado-valor'>{paciente.idade} anos</span>
                         </div>
                         <div className='perfil-dado-item'>
-                            <span className='perfil-dado-label'>Gênero</span>
+                            <span className='perfil-dado-label'>Sexo Biológico</span>
                             <span className='perfil-dado-valor'>{paciente.genero}</span>
                         </div>
                         <div className='perfil-dado-item'>
