@@ -371,8 +371,6 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
     else:
         link = f"{request.url.scheme}://{request.url.netloc}/recuperar-senha?token={token}"
 
-    print(f"[EMAIL RECUPERAÇÃO] Link gerado: {link}")
-
     subject = "Recuperação de Senha - Plataforma de Triagem SXF"
     
     html_content = f"""
