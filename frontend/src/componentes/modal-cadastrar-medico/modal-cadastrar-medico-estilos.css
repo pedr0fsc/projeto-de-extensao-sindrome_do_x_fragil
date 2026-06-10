@@ -55,6 +55,62 @@
     gap: 12px;
 }
 
+.form-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-campo label {
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cor-texto);
+}
+
+.form-campo input,
+.form-campo select {
+    background-color: var(--cor-quaternaria);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: "Nunito", sans-serif;
+    font-size: 14px;
+    color: var(--cor-texto);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.form-campo input:focus,
+.form-campo select:focus {
+    border-color: var(--cor-secundaria);
+    background-color: white;
+}
+
+.form-campo input.input-erro {
+    border-color: #ff6b6b;
+    background-color: #fff5f5;
+}
+
+.campo-erro-msg {
+    font-family: "Nunito", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cc3333;
+    margin: 0;
+}
+
+.form-linha {
+    display: flex;
+    gap: 12px;
+}
+
+.form-linha .form-campo {
+    flex: 1;
+}
+
 .modal-rodape {
     display: flex;
     justify-content: flex-end;
