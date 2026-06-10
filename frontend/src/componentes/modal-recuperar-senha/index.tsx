@@ -50,7 +50,7 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
                 <div className='modal-corpo'>
                     {sucesso ? (
                         <div className='mensagem-sucesso'>
-                            <p>Se o usuário existir, um e-mail com as instruções foi enviado.</p>
+                            <p>Um e-mail de recuperação foi enviado.</p>
                             <p>Verifique sua caixa de entrada e spam.</p>
                             <button className='btn-voltar' onClick={onFechar} style={{ marginTop: '10px' }}>Voltar ao Login</button>
                         </div>
@@ -58,7 +58,6 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
                         <form onSubmit={handleSolicitar}>
                             <p>Informe seu CPF ou E-mail cadastrado para receber o link de recuperação.</p>
                             <div className='form-campo'>
-                                <label>CPF ou E-mail</label>
                                 <input 
                                     type="text" 
                                     value={login} 

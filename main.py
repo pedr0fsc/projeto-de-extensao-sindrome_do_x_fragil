@@ -76,7 +76,7 @@ class Paciente(Base):
     id_medico_responsavel = Column(Integer, ForeignKey("medico.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     cpf = Column(String(14), unique=True, nullable=False)
-    sexo = Column(SQLEnum("Feminino", "Masculino"), nullable=False)
+    sexo = Column(SQLEnum("Feminino", "Masculino"), name='sexo_biologico', nullable=False)
     data_nascimento = Column(Date, nullable=False)
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
