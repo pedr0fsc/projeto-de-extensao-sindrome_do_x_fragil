@@ -1,6 +1,6 @@
 # 🧬 Plataforma de Triagem: Síndrome do X Frágil (SXF)
 
-![Status do Projeto](https://img.shields.io/badge/Status-Em_Desenvolvimento-green?style=for-the-badge)
+![Status do Projeto](https://img.shields.io/badge/Status-FInalizado-green?style=for-the-badge)
 ![Tech Stack](https://img.shields.io/badge/Stack-Full_Stack-blue?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Environment-Dockerized-cyan?style=for-the-badge&logo=docker)
 
@@ -28,15 +28,16 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 ### 🐳 Para Usuários (Instalação via Docker)
 Ideal para rodar a aplicação pronta de forma simples e padronizada.
 
-1.  **Pré-requisitos**: Docker Desktop instalado.
+1.  **Pré-requisitos**: Docker Desktop instalado. Clique aqui para [baixar](https://docs.docker.com/desktop/setup/install/windows-install/)
 2.  **Preparação**:
     - Clone o repositório ou baixe os arquivos.
-    - Na raiz do projeto, configure as credenciais criando um arquivo `.env` baseado no `.env.example`:
+    - Na raiz do projeto, configure as credenciais criando um arquivo `.env` baseado no `.env.example`.<br>
+    - Use `copy` para Windows ou `cp`para Linux:<br><br>
     ```bash
-    cp .env.example .env
+    copy .env.example .env
     ```
     - Preencha o arquivo `.env` com suas configurações.
-3.  **Execução**:
+3.  **Execução**:<br><br>
     ```bash
     docker-compose up -d --build
     ```
@@ -46,6 +47,8 @@ Ideal para rodar a aplicação pronta de forma simples e padronizada.
 Ideal para contribuições e modificações no código.
 
 #### 1. Preparando o Ambiente
+Acesse o site do repositório [aqui](https://github.com/pedr0fsc/projeto-de-extensao-sindrome_do_x_fragil) e faça um Fork (Ou não será possível editar nada por não ter permissão de contribuidor).
+
 Clone o repositório:
 ```bash
 git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
@@ -53,30 +56,30 @@ cd projeto-de-extensao-sindrome_do_x_fragil
 ```
 Copie o arquivo de exemplo e preencha com suas senhas locais:
 ```bash
-cp .env.example .env
+copy .env.example .env
 ```
 
 #### 2. Frontend (React)
-1. Navegue até a pasta do frontend:
+1. Navegue até a pasta do frontend:<br><br>
    ```bash
    cd frontend
    ```
-2. Instale as dependências do Node:
+2. Instale as dependências do Node:<br><br>
    ```bash
    npm install
    ```
-3. Saia do diretório:
+3. Saia do diretório:<br><br>
    ```bash
    cd ..
    ```
 
 #### 3. Backend (Python)
 1. Certifique-se de ter o Python instalado.
-2. Instale as dependências necessárias:
+2. Instale as dependências necessárias:<br><br>
    ```bash
    pip install -r requirements.txt
    ```
-3. Inicie o servidor:
+3. Inicie o servidor:<br><br>
    ```bash
    py -m uvicorn main:app --reload
    ```
@@ -161,7 +164,7 @@ Ao hospedar em plataformas como Railway ou Render:
 
 **Dockerfile (Multi-Stage)**: Otimiza o servidor. No estágio 1, o Node.js compila o React para arquivos estáticos (dist). No estágio 2, o Python assume e serve esses arquivos, eliminando a necessidade de rodar o Node em produção.
 
-**main.py**: Atua como a "ponte". Ele utiliza bibliotecas como Flask ou FastAPI para servir a interface React e expor endpoints de API que consultam o MySQL.
+**main.py**: Atua como a "ponte". Ele utiliza bibliotecas como FastAPI para servir a interface React e expor endpoints de API que consultam o MySQL.
 
 **docker-compose.yml**: Orquestra a rede interna. O serviço api consegue encontrar o serviço database usando apenas o nome host: database, graças à rede interna do Docker.
 
@@ -171,4 +174,4 @@ Ao hospedar em plataformas como Railway ou Render:
 
 Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
 
-Desenvolvido com 🧬 para o avanço do diagnóstico genético.
+Desenvolvido para o avanço do diagnóstico genético. 🧬 
