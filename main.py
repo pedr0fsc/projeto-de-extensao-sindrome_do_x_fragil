@@ -8,7 +8,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import Depends, FastAPI, File, HTTPException, Request, BackgroundTasks, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -23,6 +23,93 @@ from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+
+
+def init_db():
+    print("--- [DB] Aguardando conexão com o banco de dados... ---")
+    retries = 10
+    while retries > 0:
+        try:
+            # Try to connect and create tables
+            Base.metadata.create_all(bind=engine)
+            
+            # Confirm table creation in logs
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            print(f"--- [DB] Tabelas confirmadas: {', '.join(tables)} ---")
+            return
+        except Exception as e:
+            retries -= 1
+            print(f"--- [DB CONNECT] Banco de dados ainda não está pronto (Tentativas restantes: {retries}) ---")
+            if retries == 0:
+                print(f"--- [DB FATAL ERROR] Erro final ao conectar: {e} ---")
+                raise e
+            time.sleep(5)
+
+
+def init_seed_data():
+    db = SessionLocal()
+    try:
+        # Seed Sintomas
+        if db.query(Sintoma).count() == 0:
+            print("--- [SEED] Populando tabela de sintomas ---")
+            sintomas_data = [
+                ("Deficiência intelectual", 0.20, 0.32),
+                ("Face alongada/orelhas", 0.09, 0.29),
+                ("Macroorquidismo", None, 0.26),
+                ("Hipermobilidade articular", 0.04, 0.19),
+                ("Dificuldades de aprendizagem", 0.28, 0.18),
+                ("Déficit de atenção", 0.12, 0.17),
+                ("Mov. repetitivos", 0.05, 0.17),
+                ("Atraso na fala", 0.01, 0.14),
+                ("Hiperatividade", 0.04, 0.12),
+                ("Evita contato visual", 0.08, 0.06),
+                ("Evita contato físico", 0.07, 0.04),
+                ("Agressividade", 0.02, 0.01)
+            ]
+            for nome, pf, pm in sintomas_data:
+                db.add(Sintoma(nome=nome, peso_feminino=pf, peso_masculino=pm))
+            db.commit()
+
+        # Seed Limiares
+        if db.query(Limiar).count() == 0:
+            print("--- [SEED] Populando tabela de limiares ---")
+            db.add(Limiar(sexo="Masculino", valor=0.56))
+            db.add(Limiar(sexo="Feminino", valor=0.55))
+            db.commit()
+            
+    except Exception as e:
+        print(f"--- [SEED ERROR] Falha ao popular dados: {e} ---")
+    finally:
+        db.close()
+
+
+def init_admin():
+    # Use a direct engine connection for initialization
+    db = SessionLocal()
+    try:
+        # Check if any admin exists
+        admin = db.query(Usuario).filter(Usuario.tipo == "Administrador").first()
+        if not admin:
+            print("--- [SEED] Criando administrador inicial ---")
+            admin_user = Usuario(
+                nome="Administrador",
+                cpf=os.getenv("ADMIN_CPF"),
+                senha=hash_senha(os.getenv("ADMIN_PASSWORD")),
+                ativo=True,
+                telefone="0000000000",
+                email=os.getenv("ADMIN_EMAIL"),
+                tipo="Administrador",
+            )
+            db.add(admin_user)
+            db.commit()
+            print("--- [SEED] Administrador criado com sucesso ---")
+        else:
+            print("--- [SEED] Administrador já existente, pulando criação ---")
+    except Exception as e:
+        print(f"--- [SEED ERROR] Falha ao criar admin: {e} ---")
+    finally:
+        db.close()
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -83,6 +170,27 @@ class Instituicao(Base):
     cep = Column(String(9), nullable=False)
     cnpj = Column(String(18), nullable=False, unique=True)
 
+class InstitutoMedico(Base):
+    __tablename__ = "instituto_medico"
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), primary_key=True)
+    id_medico = Column(Integer, ForeignKey("medico.id"), primary_key=True)
+    vinculo_ativo = Column(Boolean, default=True)
+
+
+class Instituicao(Base):
+    __tablename__ = "instituicao"
+    id = Column(Integer, primary_key=True)
+    nome_fantasia = Column(String(150), nullable=False)
+    nome = Column(String(500))
+    rua = Column(String(150), nullable=False)
+    numero = Column(String(10), nullable=False)
+    complemento = Column(String(100))
+    bairro = Column(String(100), nullable=False)
+    cidade = Column(String(100), nullable=False)
+    estado = Column(String(2), nullable=False)
+    cep = Column(String(9), nullable=False)
+    cnpj = Column(String(18), nullable=False, unique=True)
+
 
 class Paciente(Base):
     __tablename__ = "paciente"
@@ -96,6 +204,9 @@ class Paciente(Base):
     telefone = Column(String(24), nullable=False)
     email = Column(String(150), nullable=False)
     criado_em = Column(DateTime, default=datetime.now)
+    foto_face = Column(String(255), nullable=True)
+    foto_perfil_esq = Column(String(255), nullable=True)
+    foto_perfil_dir = Column(String(255), nullable=True)
     medico = relationship("Medico")
     instituicao = relationship("Instituicao")
 
@@ -325,6 +436,22 @@ def gerar_pdf(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -
     buffer.seek(0)
     return buffer
 
+def get_institutos_medico(db, id_medico):
+    rows = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id_medico,
+        InstitutoMedico.vinculo_ativo == True
+    ).all()
+    return [r.id_instituto for r in rows]
+
+def sincronizar_ativo_medico(db, id_medico):
+    tem_vinculo_ativo = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id_medico,
+        InstitutoMedico.vinculo_ativo == True
+    ).first()
+    db.query(Usuario).filter(Usuario.id == id_medico).update(
+        {"ativo": bool(tem_vinculo_ativo)}
+    )
+
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.post("/api/login")
@@ -345,6 +472,7 @@ async def api_login(request: Request, db=Depends(get_db)):
         "tipo": user.tipo,
     })
     return {"success": True, "tipo": user.tipo, "nome": user.nome}
+
 
 
 @app.post("/api/logout")
@@ -515,7 +643,9 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
         return {"found": False}
     is_admin = request.session.get("tipo") == "Administrador"
     is_owner = paciente.id_medico_responsavel == request.session.get("id_usuario")
-    if is_admin or is_owner:
+    inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
+    same_inst = paciente.id_instituto in inst_ids
+    if is_admin or is_owner or same_inst:
         return {
             "found": True,
             "paciente": {
@@ -526,6 +656,9 @@ async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(re
                 "data_nascimento": str(paciente.data_nascimento),
                 "telefone": paciente.telefone,
                 "email": paciente.email,
+                "foto_face": paciente.foto_face,
+                "foto_perfil_esq": paciente.foto_perfil_esq,
+                "foto_perfil_dir": paciente.foto_perfil_dir,
             },
         }
     medico = db.query(Medico).filter(Medico.id == paciente.id_medico_responsavel).first()
@@ -588,6 +721,9 @@ async def api_listar_pacientes(request: Request, db=Depends(get_db), _=Depends(r
             "data_nascimento": str(p.data_nascimento),
             "telefone": p.telefone,
             "email": p.email,
+            "foto_face": p.foto_face,
+            "foto_perfil_esq": p.foto_perfil_esq,
+            "foto_perfil_dir": p.foto_perfil_dir,
         }
         for p in pacientes
     ]
@@ -849,12 +985,84 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
     db.commit()
     return {"success": True}
 
+@app.put("/api/usuario/{id}/instituto/{id_instituto}/ativo")
+async def api_toggle_vinculo(id: int, id_instituto: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()  # {"ativo": true/false}
+    vinculo = db.query(InstitutoMedico).filter(
+        InstitutoMedico.id_medico == id,
+        InstitutoMedico.id_instituto == id_instituto
+    ).first()
+    if not vinculo:
+        raise HTTPException(status_code=404, detail="Vínculo não encontrado")
+    vinculo.vinculo_ativo = body.get("ativo", False)
+    db.flush()
+    sincronizar_ativo_medico(db, id)
+    db.commit()
+    return {"success": True}
+
+@app.post("/api/paciente/{id}/fotos")
+async def api_upload_fotos_paciente(
+    id: int,
+    request: Request,
+    foto_face: UploadFile = File(default=None),
+    foto_perfil_esq: UploadFile = File(default=None),
+    foto_perfil_dir: UploadFile = File(default=None),
+    db=Depends(get_db),
+    _=Depends(require_auth),
+):
+    paciente = db.query(Paciente).filter(Paciente.id == id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    is_admin = request.session.get("tipo") == "Administrador"
+    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+        raise HTTPException(status_code=403, detail="Sem permissão")
+
+    pasta = f"uploads/pacientes/{id}"
+    os.makedirs(pasta, exist_ok=True)
+
+    EXTENSOES_PERMITIDAS = {"jpg", "jpeg", "png", "webp"}
+
+    async def salvar_foto(arquivo: UploadFile, nome: str):
+        if not arquivo or not arquivo.filename:
+            return None
+        ext = arquivo.filename.rsplit(".", 1)[-1].lower()
+        if ext not in EXTENSOES_PERMITIDAS:
+            raise HTTPException(status_code=400, detail=f"Formato inválido: {ext}")
+        caminho = f"{pasta}/{nome}.{ext}"
+        conteudo = await arquivo.read()
+        with open(caminho, "wb") as f:
+            f.write(conteudo)
+        return f"/{caminho}"
+
+    face_path = await salvar_foto(foto_face, "face")
+    esq_path = await salvar_foto(foto_perfil_esq, "perfil_esq")
+    dir_path = await salvar_foto(foto_perfil_dir, "perfil_dir")
+
+    if face_path is not None:
+        paciente.foto_face = face_path
+    if esq_path is not None:
+        paciente.foto_perfil_esq = esq_path
+    if dir_path is not None:
+        paciente.foto_perfil_dir = dir_path
+
+    db.commit()
+    return {
+        "success": True,
+        "foto_face": paciente.foto_face,
+        "foto_perfil_esq": paciente.foto_perfil_esq,
+        "foto_perfil_dir": paciente.foto_perfil_dir,
+    }
+
 
 @app.delete("/api/usuario/{id}")
 async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_admin)):
     user = db.query(Usuario).filter(Usuario.id == id).first()
     if user:
         user.ativo = False
+        if user.tipo == "Médico":
+            db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == id).update(
+                {"vinculo_ativo": False}
+            )
         db.commit()
     return {"success": True}
 
@@ -890,6 +1098,10 @@ async def api_medicos(db=Depends(get_db)):
         for m in medicos
     ]
 
+
+# ── Uploads ──────────────────────────────────────────────────────────────────
+os.makedirs("uploads/pacientes", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── Static files / SPA ────────────────────────────────────────────────────────
 if os.path.exists("frontend/dist"):
