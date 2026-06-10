@@ -28,8 +28,36 @@ load_dotenv()
 
 
 
+def init_admin():
+    # Use a direct engine connection for initialization
+    db = SessionLocal()
+    try:
+        # Check if any admin exists
+        admin = db.query(Usuario).filter(Usuario.tipo == "Administrador").first()
+        if not admin:
+            print("--- [SEED] Criando administrador inicial ---")
+            admin_user = Usuario(
+                nome="Administrador",
+                cpf=os.getenv("ADMIN_CPF"),
+                senha=hash_senha(os.getenv("ADMIN_PASSWORD")),
+                ativo=True,
+                telefone="0000000000",
+                email=os.getenv("ADMIN_EMAIL"),
+                tipo="Administrador",
+            )
+            db.add(admin_user)
+            db.commit()
+            print("--- [SEED] Administrador criado com sucesso ---")
+        else:
+            print("--- [SEED] Administrador já existente, pulando criação ---")
+    except Exception as e:
+        print(f"--- [SEED ERROR] Falha ao criar admin: {e} ---")
+    finally:
+        db.close()
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI()
+app = FastAPI(on_startup=[init_admin])
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY"),
@@ -829,3 +857,9 @@ else:
     print("frontend/dist não encontrado - Rodando sem React")
 
 handler = Mangum(app)
+
+if __name__ == "__main__":
+    import uvicorn
+    # Get the port from environment variables, defaulting to 3001
+    port = int(os.getenv("PORT", 3001))
+    uvicorn.run(app, host="0.0.0.0", port=port)

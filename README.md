@@ -25,27 +25,38 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 
 ## 🚀 Guia de Instalação e Execução
 
-### 1. Preparando o Ambiente
+### 🐳 Para Usuários (Instalação via Docker)
+Ideal para rodar a aplicação pronta de forma simples e padronizada.
 
+1.  **Pré-requisitos**: Docker Desktop instalado.
+2.  **Preparação**:
+    - Clone o repositório ou baixe os arquivos.
+    - Na raiz do projeto, configure as credenciais criando um arquivo `.env` baseado no `.env.example`:
+    ```bash
+    cp .env.example .env
+    ```
+    - Preencha o arquivo `.env` com suas configurações.
+3.  **Execução**:
+    ```bash
+    docker-compose up -d --build
+    ```
+4.  **Acesso**: A aplicação estará disponível em `http://localhost:3001` (porta padrão, verifique seu `.env`).
+
+### 💻 Para Desenvolvedores (Ambiente Local)
+Ideal para contribuições e modificações no código.
+
+#### 1. Preparando o Ambiente
 Clone o repositório:
 ```bash
 git clone https://github.com/seu-usuario/projeto-de-extensao-sindrome_do_x_fragil.git
-```
-Entre no diretório:
-```bash
 cd projeto-de-extensao-sindrome_do_x_fragil
 ```
-
-Configure as credenciais:
 Copie o arquivo de exemplo e preencha com suas senhas locais:
 ```bash
 cp .env.example .env
 ```
 
-### 2. Instalação e Execução
-
-
-#### **Frontend (React)**
+#### 2. Frontend (React)
 1. Navegue até a pasta do frontend:
    ```bash
    cd frontend
@@ -59,7 +70,7 @@ cp .env.example .env
    cd ..
    ```
 
-#### **Backend (Python)**
+#### 3. Backend (Python)
 1. Certifique-se de ter o Python instalado.
 2. Instale as dependências necessárias:
    ```bash
@@ -121,9 +132,9 @@ Abra um PR no GitHub. Outro desenvolvedor deve revisar seu código antes do Merg
 
 ---
 
-## 🐳 Como Buildar e Rodar
-Modo de Desenvolvimento (Local)
+## 🐳 Como Buildar e Rodar (Docker)
 
+### Modo de Desenvolvimento (Local)
 Para rodar tudo com um único comando usando Docker:
 
 ```
@@ -158,6 +169,6 @@ Ao hospedar em plataformas como Railway ou Render:
 
 ## 📜 Licença
 
-Este projeto está sob a licença MIT. Sinta-se livre para usar, estudar e modificar, desde que mantenha os créditos aos autores originais.
+Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
 
 Desenvolvido com 🧬 para o avanço do diagnóstico genético.
