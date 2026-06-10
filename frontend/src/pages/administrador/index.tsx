@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
+import { ModalCadastrarInstituicao } from '../../componentes/modal-cadastrar-instituicao'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
 import medicoImg from '../../assets/medico.png'
@@ -27,6 +28,8 @@ interface Medico {
     telefone: string
     tipo: string
     ativo: boolean
+    id_instituto: number | null
+    instituicao: string | null
 }
 
 interface Paciente {
@@ -60,7 +63,6 @@ function calcularIdade(dataNascimento: string): number {
     return idade
 }
 
-// ─── Reusable sort chips row ──────────────────────────────────────────────────
 interface SortChipsProps<T extends string> {
     chips: { label: string; value: T }[]
     active: T
@@ -87,9 +89,9 @@ function SortChips<T extends string>({ chips, active, order, onSort }: SortChips
     )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export function PaginaAdministrador() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
+    const [modalInstituicaoAberto, setModalInstituicaoAberto] = useState(false)
     const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null)
     const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
     const [visao, setVisao] = useState<Visao>('dashboard')
@@ -105,7 +107,6 @@ export function PaginaAdministrador() {
     const [loading, setLoading] = useState(true)
     const navigate = useTransitionNavigate()
 
-    // One search term per view — no cross-tab bleed
     const [searchDashboard, setSearchDashboard] = useState('')
     const [searchMedicos, setSearchMedicos] = useState('')
     const [searchPacientes, setSearchPacientes] = useState('')
@@ -121,7 +122,6 @@ export function PaginaAdministrador() {
         else setSearchPacientes(val)
     }
 
-    // Sort states
     const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>('nome')
     const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>('asc')
     const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>('nome')
@@ -149,16 +149,15 @@ export function PaginaAdministrador() {
                     telefone: medico.telefone,
                     tipo: medico.tipo,
                     crm: medico.crm,
+                    id_instituto: medico.id_instituto,
                     ativo: !medico.ativo,
                 }),
             })
-
             const data = await response.json()
             if (!response.ok || !data.success) {
                 alert('Não foi possível alterar o status do médico.')
                 return
             }
-
             await fetchData()
         } catch (err) {
             console.error('Erro ao alterar status do médico:', err)
@@ -168,7 +167,6 @@ export function PaginaAdministrador() {
 
     // ── Filtered + sorted lists ──────────────────────────────────────────────
 
-    // Dashboard: médicos activity table filtered by dashboard search
     const atividadesMedicos = useMemo(() => {
         const term = searchDashboard.toLowerCase()
         return medicos
@@ -180,6 +178,7 @@ export function PaginaAdministrador() {
                     ativo: m.ativo,
                     consultas: triagensMedico.length,
                     pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
+                    instituicao: m.instituicao || '-',
                 }
             })
             .filter(a =>
@@ -187,11 +186,11 @@ export function PaginaAdministrador() {
                 a.medico.toLowerCase().includes(term) ||
                 a.crm.toLowerCase().includes(term) ||
                 a.consultas.toString().includes(term) ||
-                a.pacientes.toString().includes(term)
+                a.pacientes.toString().includes(term) ||
+                a.instituicao.toLowerCase().includes(term)
             )
     }, [medicos, relatorios, searchDashboard])
 
-    // Dashboard: últimas triagens filtered by dashboard search
     const filteredRelatoriosDashboard = useMemo(() => {
         const term = searchDashboard.toLowerCase()
         if (!term) return relatorios.slice(0, 5)
@@ -206,7 +205,6 @@ export function PaginaAdministrador() {
             .slice(0, 5)
     }, [relatorios, searchDashboard])
 
-    // Médicos view: filtered + sorted
     const sortedMedicos = useMemo(() => {
         const term = searchMedicos.toLowerCase()
         const filtered = term
@@ -215,7 +213,8 @@ export function PaginaAdministrador() {
                 m.crm.toLowerCase().includes(term) ||
                 m.cpf.includes(term) ||
                 m.email.toLowerCase().includes(term) ||
-                m.telefone.includes(term)
+                m.telefone.includes(term) ||
+                (m.instituicao || '').toLowerCase().includes(term)
             )
             : [...medicos]
 
@@ -228,7 +227,6 @@ export function PaginaAdministrador() {
         })
     }, [medicos, searchMedicos, sortMedicosField, sortMedicosOrder])
 
-    // Pacientes view: filtered + sorted (includes data_nascimento search)
     const sortedPacientes = useMemo(() => {
         const term = searchPacientes.toLowerCase()
         const filtered = term
@@ -413,6 +411,7 @@ export function PaginaAdministrador() {
                                             <th>Triagens Realizadas</th>
                                             <th>Pacientes Atendidos</th>
                                             <th>Status</th>
+                                            <th>Instituição</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -427,6 +426,7 @@ export function PaginaAdministrador() {
                                                         {a.ativo ? 'Ativo' : 'Inativo'}
                                                     </span>
                                                 </td>
+                                                <td>{a.instituicao}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -466,9 +466,14 @@ export function PaginaAdministrador() {
                         <div className='admin-secao'>
                             <div className='admin-filtros-header'>
                                 <h2>Filtros:</h2>
-                                <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
-                                    + Inserir usuário
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir btn-inserir-secundario'>
+                                        + Instituição
+                                    </button>
+                                    <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
+                                        + Inserir usuário
+                                    </button>
+                                </div>
                             </div>
 
                             <SortChips
@@ -486,6 +491,7 @@ export function PaginaAdministrador() {
                                             <th>Nome</th>
                                             <th>Tipo</th>
                                             <th>CRM (se médico)</th>
+                                            <th>Instituição</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -496,6 +502,7 @@ export function PaginaAdministrador() {
                                                 <td>{m.nome}</td>
                                                 <td>{m.tipo}</td>
                                                 <td>{m.crm || '-'}</td>
+                                                <td>{m.instituicao || '-'}</td>
                                                 <td>
                                                     <label className='admin-switch'>
                                                         <input
@@ -586,6 +593,13 @@ export function PaginaAdministrador() {
                     onFechar={() => {
                         setModalCadastrarAberto(false)
                         fetchData()
+                    }}
+                />
+            )}
+            {modalInstituicaoAberto && (
+                <ModalCadastrarInstituicao
+                    onFechar={() => {
+                        setModalInstituicaoAberto(false)
                     }}
                 />
             )}

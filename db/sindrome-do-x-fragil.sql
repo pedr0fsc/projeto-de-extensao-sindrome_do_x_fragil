@@ -38,8 +38,10 @@ CREATE TABLE usuario(
 SELECT 'Criando tabela medico...' AS info;
 CREATE TABLE medico(
 	id INT PRIMARY KEY, 
+    id_instituto INT NULL,
     crm VARCHAR(13) NOT NULL UNIQUE,
-    FOREIGN KEY (id) REFERENCES usuario(id)
+    FOREIGN KEY (id) REFERENCES usuario(id),
+    FOREIGN KEY (id_instituto) REFERENCES instituicao(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SELECT 'Criando tabela instituto_medico...' AS info;
