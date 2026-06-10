@@ -32,7 +32,7 @@ Ideal para rodar a aplicação pronta de forma simples e padronizada.
 2.  **Preparação**:
     - Clone o repositório ou baixe os arquivos.
     - Na raiz do projeto, configure as credenciais criando um arquivo `.env` baseado no `.env.example`.<br>
-    - Use `copy` para Windows ou `cp`para Linux:<br><br>
+    - Use `copy` para Windows ou `cp` para Linux:<br><br>
     ```bash
     copy .env.example .env
     ```
