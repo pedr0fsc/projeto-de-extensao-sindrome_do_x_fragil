@@ -54,6 +54,8 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
     const [cpf, setCpf] = useState('')
     const [paciente, setPaciente] = useState<Paciente | null>(null)
     const [historico, setHistorico] = useState<ConsultaHistorico[]>([])
+    const [modoEdicao, setModoEdicao] = useState(false)
+    const [triagemEditandoId, setTriagemEditandoId] = useState<number | null>(null)
     const [sintomasList, setSintomasList] = useState<Sintoma[]>([])
     const [resultadoBusca, setResultadoBusca] = useState<'não encontrado' | 'sem acesso' | null>(null)
     const [medicoDono, setMedicoDono] = useState('')
@@ -63,6 +65,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
     const [queixaPrincipal, setQueixaPrincipal] = useState('')
     const [diagnostico, setDiagnostico] = useState('')
     const [prescricao, setPrescricao] = useState('')
+    const [informacoesPaciente, setInformacoesPaciente] = useState('')
     const [observacoes, setObservacoes] = useState('')
     const [dataConsulta, setDataConsulta] = useState(new Date().toISOString().split('T')[0])
     
@@ -78,6 +81,38 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
             .then(data => setSintomasList(data))
             .catch(err => console.error("Erro ao carregar sintomas", err))
     }, [])
+
+    const parsearObservacoes = (texto: string) => {
+        const linhas = texto.split('\n\n').map(item => item.trim()).filter(Boolean)
+        const queixa = linhas.find(item => /^Queixa:\s*/i.test(item))?.replace(/^Queixa:\s*/i, '').trim() || ''
+        const diagnostico = linhas.find(item => /^Diagnóstico:\s*/i.test(item))?.replace(/^Diagnóstico:\s*/i, '').trim() || ''
+        const prescricao = linhas.find(item => /^Prescrição:\s*/i.test(item))?.replace(/^Prescrição:\s*/i, '').trim() || ''
+        const infoPaciente = linhas.find(item => /^Informações do paciente:\s*/i.test(item))?.replace(/^Informações do paciente:\s*/i, '').trim() || ''
+        const gerais = linhas
+            .filter(item => !/^(Queixa:|Diagnóstico:|Prescrição:|Informações do paciente:)/i.test(item))
+            .join('\n\n')
+            .trim()
+
+        return { queixa, diagnostico, prescricao, infoPaciente, gerais }
+    }
+
+    const abrirEdicaoConsulta = (consulta: ConsultaHistorico) => {
+        const dados = parsearObservacoes(consulta.observacoes)
+        const sintomasSelecionados = consulta.sintomas
+            .map(nome => sintomasList.find(item => item.nome === nome)?.id)
+            .filter((id): id is number => typeof id === 'number')
+
+        setModoEdicao(true)
+        setTriagemEditandoId(consulta.id)
+        setQueixaPrincipal(dados.queixa)
+        setDiagnostico(dados.diagnostico)
+        setPrescricao(dados.prescricao)
+        setInformacoesPaciente(dados.infoPaciente)
+        setObservacoes(dados.gerais)
+        setSintomasMarcados(sintomasSelecionados)
+        setDataConsulta(consulta.data.split(' ')[0].split('/').reverse().join('-'))
+        setEtapa('novo-prontuario')
+    }
 
     const buscarPaciente = async () => {
         setLoading(true)
@@ -138,22 +173,28 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
             queixaPrincipal && `Queixa: ${queixaPrincipal}`,
             diagnostico && `Diagnóstico: ${diagnostico}`,
             prescricao && `Prescrição: ${prescricao}`,
+            informacoesPaciente && `Informações do paciente: ${informacoesPaciente}`,
             observacoes
         ].filter(Boolean).join('\n\n')
 
         try {
-            const response = await fetch('/api/triagem/calcular', {
-                method: 'POST',
+            const endpoint = modoEdicao && triagemEditandoId ? `/api/triagem/${triagemEditandoId}` : '/api/triagem/calcular'
+            const method = modoEdicao && triagemEditandoId ? 'PUT' : 'POST'
+
+            const response = await fetch(endpoint, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    paciente_id: paciente.id,
-                    sintomas: sintomasObj,
-                    observacoes: obsCompleta
-                })
+                body: modoEdicao && triagemEditandoId
+                    ? JSON.stringify({ observacoes: obsCompleta, data_consulta: dataConsulta })
+                    : JSON.stringify({
+                        paciente_id: paciente.id,
+                        sintomas: sintomasObj,
+                        observacoes: obsCompleta
+                    })
             })
             const data = await response.json()
-            if (data.triagem_id) {
-                setTriagemGeradaId(data.triagem_id)
+            if (data.triagem_id || data.success) {
+                setTriagemGeradaId(data.triagem_id ?? triagemEditandoId)
                 setProntuarioSalvo(true)
                 fetchHistorico(paciente.id)
             } else {
@@ -168,11 +209,14 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
     }
 
     const resetFormulario = () => {
+        setModoEdicao(false)
+        setTriagemEditandoId(null)
         setProntuarioSalvo(false)
         setSintomasMarcados([])
         setQueixaPrincipal('')
         setDiagnostico('')
         setPrescricao('')
+        setInformacoesPaciente('')
         setObservacoes('')
         setTriagemGeradaId(null)
     }
@@ -292,14 +336,23 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                             <span className='historico-data'>{h.data}</span>
                                             <span className='historico-medico'>Dr(a). {h.medico}</span>
                                         </div>
-                                        <button
-                                            className='botao-gerar-pdf'
-                                            onClick={() => {
-                                                window.open(`/api/triagem/imprimir/${h.id}`, '_blank')
-                                            }}
-                                        >
-                                            Gerar PDF
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                className='botao-gerar-pdf'
+                                                onClick={() => {
+                                                    window.open(`/api/triagem/imprimir/${h.id}`, '_blank')
+                                                }}
+                                            >
+                                                Gerar PDF
+                                            </button>
+                                            <button
+                                                className='botao-gerar-pdf'
+                                                onClick={() => abrirEdicaoConsulta(h)}
+                                                style={{ background: '#2C6975' }}
+                                            >
+                                                Editar
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className='historico-item-sintomas'>
                                         {h.sintomas.map((s, j) => (
@@ -322,7 +375,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                         <div className='modal-header'>
                             <div className='modal-header-nav'>
                                 <button className='botao-voltar' onClick={() => setEtapa('perfil')}>← Voltar ao perfil</button>
-                                <h2>Novo Prontuário</h2>
+                                <h2>{modoEdicao ? 'Editar Consulta' : 'Novo Prontuário'}</h2>
                             </div>
                             <button className='botao-fechar' onClick={onFechar}>✕</button>
                         </div>
@@ -399,6 +452,17 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                         />
                                     </div>
 
+                                    <div className='prontuario-campo'>
+                                        <label className='consulta-label'>Informações do paciente</label>
+                                        <textarea
+                                            className='prontuario-textarea'
+                                            placeholder="Histórico familiar, desenvolvimento, hábitos, cuidado domiciliar, observações adicionais..."
+                                            value={informacoesPaciente}
+                                            onChange={(e) => setInformacoesPaciente(e.target.value)}
+                                            rows={3}
+                                        />
+                                    </div>
+
                                     <div className='prontuario-sintomas'>
                                         <label className='consulta-label'>Sintomas observados</label>
                                         <p className='prontuario-sintomas-sub'>
@@ -446,7 +510,7 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                         onClick={salvarProntuario}
                                         disabled={loading || !queixaPrincipal.trim()}
                                     >
-                                        {loading ? 'Salvando...' : 'Salvar Prontuário'}
+                                        {loading ? 'Salvando...' : (modoEdicao ? 'Salvar alterações' : 'Salvar Prontuário')}
                                     </button>
                                 </div>
                             </>

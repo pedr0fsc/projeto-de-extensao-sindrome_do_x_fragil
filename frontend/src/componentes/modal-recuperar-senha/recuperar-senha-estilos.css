@@ -151,6 +151,16 @@
     transform: none;
 }
 
+.msg-nao-encontrado {
+    color: #ff6b6b;
+    font-family: "Nunito", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 4px 0 8px 0;
+    text-align: center;
+    animation: slideDownFade 0.2s ease;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

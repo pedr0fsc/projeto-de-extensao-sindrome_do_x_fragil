@@ -11,11 +11,12 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
     const [login, setLogin] = useState('')
     const [loading, setLoading] = useState(false)
     const [sucesso, setSucesso] = useState(false)
-    const [devLink, setDevLink] = useState('')
+    const [erroNaoEncontrado, setErroNaoEncontrado] = useState(false)
 
     const handleSolicitar = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
+        setErroNaoEncontrado(false)
         try {
             const response = await fetch('/api/password-reset/request', {
                 method: 'POST',
@@ -25,9 +26,8 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
             const data = await response.json()
             if (data.success) {
                 setSucesso(true)
-                if (data.link) {
-                    setDevLink(data.link)
-                }
+            } else if (data.not_found) {
+                setErroNaoEncontrado(true)
             } else {
                 mostrarAlerta('Erro ao solicitar recuperação', 'erro')
             }
@@ -50,47 +50,25 @@ export function ModalSolicitarRecuperacao({ onFechar }: Props) {
                 <div className='modal-corpo'>
                     {sucesso ? (
                         <div className='mensagem-sucesso'>
-                            <p>Se o usuário existir, um e-mail com as instruções foi enviado.</p>
+                            <p>Um e-mail de recuperação foi enviado.</p>
                             <p>Verifique sua caixa de entrada e spam.</p>
-                            
-                            {devLink && (
-                                <div style={{ 
-                                    marginTop: '15px', 
-                                    padding: '12px', 
-                                    background: 'var(--cor-quaternaria)', 
-                                    borderRadius: '8px', 
-                                    border: '1px solid var(--cor-terciaria)',
-                                    textAlign: 'left'
-                                }}>
-                                    <p style={{ fontSize: '12px', fontWeight: 700, color: 'var(--cor-primaria)', marginBottom: '5px' }}>
-                                        Link de Recuperação (Modo Teste):
-                                    </p>
-                                    <a href={devLink} target="_blank" rel="noreferrer" style={{ 
-                                        fontSize: '11px', 
-                                        color: 'var(--cor-primaria)', 
-                                        wordBreak: 'break-all',
-                                        textDecoration: 'underline'
-                                    }}>
-                                        {devLink}
-                                    </a>
-                                </div>
-                            )}
-                            
                             <button className='btn-voltar' onClick={onFechar} style={{ marginTop: '10px' }}>Voltar ao Login</button>
                         </div>
                     ) : (
                         <form onSubmit={handleSolicitar}>
                             <p>Informe seu CPF ou E-mail cadastrado para receber o link de recuperação.</p>
                             <div className='form-campo'>
-                                <label>CPF ou E-mail</label>
                                 <input 
                                     type="text" 
                                     value={login} 
-                                    onChange={e => setLogin(e.target.value)} 
+                                    onChange={e => { setLogin(e.target.value); setErroNaoEncontrado(false) }} 
                                     placeholder="000.000.000-00 ou email@exemplo.com"
                                     required
                                 />
                             </div>
+                            {erroNaoEncontrado && (
+                                <p className='msg-nao-encontrado'>Usuário não encontrado!</p>
+                            )}
                             <button type="submit" className='btn-enviar' disabled={loading}>
                                 {loading ? 'Enviando...' : 'Enviar Link de Recuperação'}
                             </button>
