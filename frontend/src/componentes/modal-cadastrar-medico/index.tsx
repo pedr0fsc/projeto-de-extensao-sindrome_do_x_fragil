@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './modal-cadastrar-medico-estilos.css'
-import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
@@ -22,7 +22,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
 
     const erros = {
         nome: !nome.trim(),
-        email: !email.trim(),
+        email: !validarEmail(email),
         cpf: limparFormatacao(cpf).length !== 11,
         senha: !senha,
     }
@@ -88,7 +88,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                             onChange={e => setEmail(e.target.value)}
                             className={tentouSubmit && erros.email ? 'input-erro' : ''}
                         />
-                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail é obrigatório</p>}
+                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
@@ -155,11 +155,12 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
-                            <input 
-                                type="text" 
-                                value={crm} 
-                                onChange={e => setCrm(e.target.value)} 
-                                maxLength={10}
+                            <input
+                                type="text"
+                                value={crm}
+                                onChange={e => setCrm(formatarCRM(e.target.value))}
+                                maxLength={9}
+                                placeholder="000000/SP"
                             />
                         </div>
                     )}

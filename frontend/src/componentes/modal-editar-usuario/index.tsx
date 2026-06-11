@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import '../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css'
-import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
@@ -29,7 +29,13 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     const [loading, setLoading] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
+    const [tentouSubmit, setTentouSubmit] = useState(false)
+
+    const erroEmail = !validarEmail(email)
+
     const handleSalvar = async () => {
+        setTentouSubmit(true)
+        if (erroEmail) return
         setLoading(true)
         try {
             const response = await fetch(`/api/usuario/${usuario.id}`, {
@@ -77,7 +83,13 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     </div>
                     <div className='form-campo'>
                         <label>E-mail</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            className={tentouSubmit && erroEmail ? 'input-erro' : ''}
+                        />
+                        {tentouSubmit && erroEmail && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
@@ -138,11 +150,12 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
-                            <input 
-                                type="text" 
-                                value={crm} 
-                                onChange={e => setCrm(e.target.value)} 
-                                maxLength={10}
+                            <input
+                                type="text"
+                                value={crm}
+                                onChange={e => setCrm(formatarCRM(e.target.value))}
+                                maxLength={9}
+                                placeholder="000000/SP"
                             />
                         </div>
                     )}

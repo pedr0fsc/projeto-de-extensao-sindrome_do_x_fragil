@@ -1,23 +1,39 @@
 import { useState } from 'react'
-import './modal-cadastrar-instituicao-estilos.css'
+import '../modal-cadastrar-instituicao/modal-cadastrar-instituicao-estilos.css'
 import { useAlerta } from '../alerta'
 import { formatarCNPJ, validarCNPJ } from '../../utils/mascaras'
 
-interface Props {
-    onFechar: () => void
+interface Instituicao {
+    id: number
+    nome_fantasia: string
+    nome: string
+    cnpj: string
+    cep: string
+    rua: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
 }
 
-export function ModalCadastrarInstituicao({ onFechar }: Props) {
-    const [nomeFantasia, setNomeFantasia] = useState('')
-    const [nome, setNome] = useState('')
-    const [cnpj, setCnpj] = useState('')
-    const [cep, setCep] = useState('')
-    const [rua, setRua] = useState('')
-    const [numero, setNumero] = useState('')
-    const [complemento, setComplemento] = useState('')
-    const [bairro, setBairro] = useState('')
-    const [cidade, setCidade] = useState('')
-    const [estado, setEstado] = useState('')
+interface Props {
+    instituicao: Instituicao
+    onFechar: () => void
+    onSucesso: () => void
+}
+
+export function ModalEditarInstituicao({ instituicao, onFechar, onSucesso }: Props) {
+    const [nomeFantasia, setNomeFantasia] = useState(instituicao.nome_fantasia)
+    const [nome, setNome] = useState(instituicao.nome || '')
+    const [cnpj, setCnpj] = useState(formatarCNPJ(instituicao.cnpj))
+    const [cep, setCep] = useState(instituicao.cep)
+    const [rua, setRua] = useState(instituicao.rua)
+    const [numero, setNumero] = useState(instituicao.numero)
+    const [complemento, setComplemento] = useState(instituicao.complemento || '')
+    const [bairro, setBairro] = useState(instituicao.bairro)
+    const [cidade, setCidade] = useState(instituicao.cidade)
+    const [estado, setEstado] = useState(instituicao.estado)
     const [loading, setLoading] = useState(false)
     const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
@@ -33,22 +49,23 @@ export function ModalCadastrarInstituicao({ onFechar }: Props) {
         estado: !estado.trim(),
     }
 
-    const handleConcluir = async () => {
+    const handleSalvar = async () => {
         setTentouSubmit(true)
         if (Object.values(erros).some(Boolean)) return
         setLoading(true)
         try {
-            const response = await fetch('/api/instituicao', {
-                method: 'POST',
+            const response = await fetch(`/api/instituicao/${instituicao.id}`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome_fantasia: nomeFantasia, nome, cnpj, rua, numero, complemento, bairro, cidade, estado, cep })
+                body: JSON.stringify({ nome_fantasia: nomeFantasia, nome, cnpj: cnpj.replace(/\D/g, ''), rua, numero, complemento, bairro, cidade, estado, cep })
             })
             const data = await response.json()
             if (data.success) {
-                mostrarAlerta('Instituição cadastrada com sucesso!', 'sucesso')
+                mostrarAlerta('Instituição atualizada com sucesso!', 'sucesso')
+                onSucesso()
                 onFechar()
             } else {
-                mostrarAlerta('Erro ao cadastrar instituição.', 'erro')
+                mostrarAlerta('Erro ao atualizar instituição.', 'erro')
             }
         } catch (err) {
             console.error(err)
@@ -63,7 +80,7 @@ export function ModalCadastrarInstituicao({ onFechar }: Props) {
             <div className='modal' onClick={e => e.stopPropagation()}>
 
                 <div className='modal-header'>
-                    <h2>Adicionar Instituição:</h2>
+                    <h2>Editar Instituição:</h2>
                     <button className='botao-fechar' onClick={onFechar}>✕</button>
                 </div>
 
@@ -123,8 +140,8 @@ export function ModalCadastrarInstituicao({ onFechar }: Props) {
                 </div>
 
                 <div className='modal-rodape'>
-                    <button className='botao-concluir' onClick={handleConcluir} disabled={loading}>
-                        {loading ? 'Salvando...' : 'Concluir'}
+                    <button className='botao-concluir' onClick={handleSalvar} disabled={loading}>
+                        {loading ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                     <button className='botao-cancelar' onClick={onFechar}>Cancelar</button>
                 </div>
@@ -134,4 +151,4 @@ export function ModalCadastrarInstituicao({ onFechar }: Props) {
     )
 }
 
-export default ModalCadastrarInstituicao
+export default ModalEditarInstituicao

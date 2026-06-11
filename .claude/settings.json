@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /c/Users/sophi/OneDrive/Documents/BCC/3semestre/ExpêrienciaCriativa/ProjetoExtensão/projeto-de-extensao-sindrome_do_x_fragil/frontend && find src -type f -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.jsx\" -o -name \"*.js\" | head -100)",
+      "Read(//c/c/Users/sophi/OneDrive/Documents/BCC/3semestre/ExpêrienciaCriativa/ProjetoExtensão/projeto-de-extensao-sindrome_do_x_fragil/frontend/**)",
+      "PowerShell(cd 'c:\\\\Users\\\\sophi\\\\OneDrive\\\\Documents\\\\BCC\\\\3semestre\\\\ExpêrienciaCriativa\\\\ProjetoExtensão\\\\projeto-de-extensao-sindrome_do_x_fragil\\\\frontend'; Get-ChildItem -Path src -Directory | ForEach-Object { \"=== $\\($_.Name\\) ===\"; Get-ChildItem -Path $_.FullName -Directory | ForEach-Object { \"  - $\\($_.Name\\)\" } })"
+    ]
+  }
+}
