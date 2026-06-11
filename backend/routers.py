@@ -187,7 +187,7 @@ async def api_cadastrar_paciente(request: Request, db: Session = Depends(get_db)
     id_usuario = request.session.get("id_usuario")
     medico = db.query(Medico).filter(Medico.id == id_usuario).first()
     
-    id_inst = body.get("id_instituto") or (medico.id_instituto if medico else None)
+    id_inst = body.get("id_instituto") if body.get("id_instituto") else None
     id_medico = medico.id if medico else db.query(Medico).first().id
     
     novo = Paciente(

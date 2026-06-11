@@ -51,7 +51,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
     const [genero, setGenero] = useState('')
     const [telefone, setTelefone] = useState('')
     const [email, setEmail] = useState('')
-    const [idInstituto, setIdInstituto] = useState<number | ''>('')
+    const [idInstituto, setIdInstituto] = useState<number | null>(null)
     const [instituicoes, setInstituicoes] = useState<{ id: number; nome_fantasia: string }[]>([])
 
     // Acompanhante
@@ -309,7 +309,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             </div>
                             <div className='ms-campo-full'>
                                 <label className='ms-label'>Instituição</label>
-                                <select className='ms-select' value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
+                                <select className='ms-select' value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
                                     <option value="">Selecione uma instituição</option>
                                     {instituicoes.map(inst => (
                                         <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>

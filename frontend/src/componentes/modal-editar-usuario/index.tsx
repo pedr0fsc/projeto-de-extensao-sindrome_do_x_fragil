@@ -29,7 +29,7 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     const [cpf, setCpf] = useState(formatarCPF(usuario.cpf))
     const [telefone, setTelefone] = useState(formatarTelefone(usuario.telefone))
     const [crm, setCrm] = useState(usuario.crm || '')
-    const [idInstituto, setIdInstituto] = useState<number | ''>(usuario.id_instituto || '')
+    const [idInstituto, setIdInstituto] = useState<number | null>(usuario.id_instituto || null)
     const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as any)
     const [loading, setLoading] = useState(false)
@@ -147,13 +147,14 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                             </div>
                             <div className='form-campo'>
                                 <label>Instituição</label>
-                                <select value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
+                                <select value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
                                     <option value="">Selecione uma instituição</option>
                                     {instituicoes.map(inst => (
                                         <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
                                     ))}
                                 </select>
                             </div>
+
                         </div>
                     )}
                 </div>

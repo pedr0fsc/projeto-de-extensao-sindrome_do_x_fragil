@@ -25,7 +25,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     const [genero, setGenero] = useState(paciente.sexo)
     const [telefone, setTelefone] = useState(formatarTelefone(paciente.telefone))
     const [email, setEmail] = useState(paciente.email)
-    const [idInstituto, setIdInstituto] = useState<number | ''>(paciente.id_instituto || '')
+    const [idInstituto, setIdInstituto] = useState<number | null>(paciente.id_instituto)
     const [instituicoes, setInstituicoes] = useState<{ id: number; nome_fantasia: string }[]>([])
     const [loading, setLoading] = useState(false)
     const { mostrarAlerta } = useAlerta()
@@ -146,7 +146,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                         </div>
                         <div className='ms-campo-full'>
                             <label className='ms-label'>Instituição</label>
-                            <select className='ms-select' value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
+                            <select className='ms-select' value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
                                 <option value="">Selecione uma instituição</option>
                                 {instituicoes.map(inst => (
                                     <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
