@@ -9,6 +9,7 @@ import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
 import pacienteImg from '../../assets/paciente.png'
 import medicoImg from '../../assets/medico.png'
+import logoImg from '../../assets/logo.png'
 import pincelImg from '../../assets/pincel.png'
 import { gerarPdfConsulta } from '../../utils/gerarPDF'
 import { formatarCPF } from '../../utils/mascaras'
@@ -248,7 +249,7 @@ export function PaginaMedicos() {
             {/* ── Sidebar ── */}
             <aside className='medico-sidebar'>
                 <div className='sidebar-logo'>
-                    <h3>SXF Triagem</h3>
+                    <img src={logoImg} alt="SXF Triagem" />
                 </div>
                 <nav className='sidebar-nav'>
                     <button

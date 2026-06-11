@@ -17,10 +17,17 @@
 
 .sidebar-logo {
     padding: 16px 12px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--cor-texto);
     border-bottom: 1px solid var(--cor-terciaria);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar-logo img {
+    width: 100%;
+    max-width: 110px;
+    height: auto;
+    display: block;
 }
 
 .sidebar-nav {
