@@ -2,6 +2,7 @@ import './pagina-medicos.css'
 import { ModalCadastrarPaciente } from '../../componentes/modal-pacientes'
 import { ModalConsultarPacientes } from '../../componentes/modal-consultar-pacientes'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
+import { ModalFotosPaciente } from '../../componentes/modal-fotos-paciente'
 import { useAlerta } from '../../componentes/alerta'
 import { useState, useEffect, useMemo } from 'react'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
@@ -82,6 +83,7 @@ export function PaginaMedicos() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
     const [modalConsultarAberto, setModalConsultarAberto] = useState(false)
     const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
+    const [pacienteFotosVisualizar, setPacienteFotosVisualizar] = useState<Paciente | null>(null)
     const [pacientes, setPacientes] = useState<Paciente[]>([])
     const [consultasRecentes, setConsultasRecentes] = useState<ConsultaRecente[]>([])
     const [stats, setStats] = useState({
@@ -333,9 +335,8 @@ export function PaginaMedicos() {
                                                 <td>{c.score.toFixed(3)}</td>
                                                 <td>
                                                     <span
-                                                        className={`status-badge ${
-                                                            c.atingiu_limiar ? 'status-pendente' : 'status-concluida'
-                                                        }`}
+                                                        className={`status-badge ${c.atingiu_limiar ? 'status-pendente' : 'status-concluida'
+                                                            }`}
                                                     >
                                                         {c.atingiu_limiar ? 'Encaminhar' : 'Observação'}
                                                     </span>
@@ -447,6 +448,12 @@ export function PaginaMedicos() {
                     paciente={pacienteParaEditar}
                     onFechar={() => setPacienteParaEditar(null)}
                     onSucesso={fetchData}
+                />
+            )}
+            {pacienteFotosVisualizar && (
+                <ModalFotosPaciente
+                    paciente={pacienteFotosVisualizar}
+                    onFechar={() => setPacienteFotosVisualizar(null)}
                 />
             )}
 
