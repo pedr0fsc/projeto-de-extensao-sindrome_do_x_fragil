@@ -148,9 +148,18 @@ async def api_atualizar_instituicao(id: int, request: Request, db: Session = Dep
     body = await request.json()
     inst = db.query(Instituicao).filter(Instituicao.id == id).first()
     if not inst: raise HTTPException(status_code=404, detail="Não encontrada")
-    for key, val in body.items():
-        if hasattr(inst, key):
-            setattr(inst, key, val)
+    
+    inst.nome_fantasia = body.get("nome_fantasia", inst.nome_fantasia)
+    inst.nome = body.get("nome", inst.nome)
+    inst.cnpj = body.get("cnpj", inst.cnpj)
+    inst.rua = body.get("rua", inst.rua)
+    inst.numero = body.get("numero", inst.numero)
+    inst.complemento = body.get("complemento", inst.complemento)
+    inst.bairro = body.get("bairro", inst.bairro)
+    inst.cidade = body.get("cidade", inst.cidade)
+    inst.estado = body.get("estado", inst.estado)
+    inst.cep = body.get("cep", inst.cep)
+    
     db.commit()
     return {"success": True}
 
@@ -347,7 +356,10 @@ async def api_atualizar_paciente(id: int, request: Request, db: Session = Depend
     body = await request.json()
     p = db.query(Paciente).filter(Paciente.id == id).first()
     p.nome = body["nome"]; p.sexo = body["sexo"]; p.data_nascimento = datetime.strptime(body["data_nascimento"], "%Y-%m-%d").date()
-    p.email = body["email"]; p.id_instituto = body.get("id_instituto") or p.id_instituto
+    p.email = body["email"]
+    # Explicitly check for id_instituto to allow clearing the link
+    if "id_instituto" in body:
+        p.id_instituto = body["id_instituto"]
     db.commit()
     return {"success": True}
 

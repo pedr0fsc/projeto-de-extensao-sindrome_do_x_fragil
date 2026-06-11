@@ -24,14 +24,14 @@ interface Instituicao {
 }
 
 export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
-    const [nome, setNome] = useState(usuario.nome)
-    const [email, setEmail] = useState(usuario.email)
-    const [cpf, setCpf] = useState(formatarCPF(usuario.cpf))
-    const [telefone, setTelefone] = useState(formatarTelefone(usuario.telefone))
-    const [crm, setCrm] = useState(usuario.crm || '')
-    const [idInstituto, setIdInstituto] = useState<number | null>(usuario.id_instituto || null)
+    const [nome, setNome] = useState(usuario?.nome || '')
+    const [email, setEmail] = useState(usuario?.email || '')
+    const [cpf, setCpf] = useState(usuario?.cpf ? formatarCPF(usuario.cpf) : '')
+    const [telefone, setTelefone] = useState(usuario?.telefone ? formatarTelefone(usuario.telefone) : '')
+    const [crm, setCrm] = useState(usuario?.crm || '')
+    const [idInstituto, setIdInstituto] = useState<number | null>(usuario?.id_instituto || null)
     const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
-    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as any)
+    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario?.tipo as any || 'Médico')
     const [loading, setLoading] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
