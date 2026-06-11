@@ -24,6 +24,7 @@ interface Paciente {
     data_nascimento: string
     telefone: string
     email: string
+    id_instituto: number | null
     foto_face?: string | null
     foto_perfil_esq?: string | null
     foto_perfil_dir?: string | null

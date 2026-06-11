@@ -1,7 +1,9 @@
 import os
+import re
 import secrets
 import smtplib
 import time
+import unicodedata
 from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
@@ -295,6 +297,12 @@ def require_admin(request: Request):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+def to_snake_case(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+    return re.sub(r'[-\s]+', '_', text)
+
+
 def hash_senha(senha: str) -> str:
     return sha256(senha.encode()).hexdigest()
 
@@ -643,6 +651,28 @@ async def api_criar_instituicao(request: Request, db=Depends(get_db), _=Depends(
     return {"success": True, "id": nova.id}
 
 
+@app.put("/api/instituicao/{id}")
+async def api_atualizar_instituicao(id: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()
+    inst = db.query(Instituicao).filter(Instituicao.id == id).first()
+    if not inst:
+        raise HTTPException(status_code=404, detail="Instituição não encontrada")
+
+    inst.nome_fantasia = body["nome_fantasia"]
+    inst.nome = body.get("nome")
+    inst.rua = body["rua"]
+    inst.numero = body["numero"]
+    inst.complemento = body.get("complemento")
+    inst.bairro = body["bairro"]
+    inst.cidade = body["cidade"]
+    inst.estado = body["estado"]
+    inst.cep = body["cep"]
+    inst.cnpj = body["cnpj"]
+
+    db.commit()
+    return {"success": True}
+
+
 @app.post("/api/paciente/buscar")
 async def api_buscar_paciente(request: Request, db=Depends(get_db), _=Depends(require_auth)):
     body = await request.json()
@@ -730,6 +760,7 @@ async def api_listar_pacientes(request: Request, db=Depends(get_db), _=Depends(r
             "data_nascimento": str(p.data_nascimento),
             "telefone": p.telefone,
             "email": p.email,
+            "id_instituto": p.id_instituto,
             "foto_face": p.foto_face,
             "foto_perfil_esq": p.foto_perfil_esq,
             "foto_perfil_dir": p.foto_perfil_dir,
@@ -990,6 +1021,8 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
     paciente.data_nascimento = datetime.strptime(body["data_nascimento"], "%Y-%m-%d").date()
     paciente.telefone = body["telefone"].replace("(", "").replace(")", "").replace(" ", "").replace("-", "")
     paciente.email = body["email"]
+    if body.get("id_instituto") is not None:
+        paciente.id_instituto = body["id_instituto"]
     
     db.commit()
     return {"success": True}
@@ -1026,26 +1059,40 @@ async def api_upload_fotos_paciente(
     if not is_admin and paciente.id_medico_responsavel != request.session.get("id_usuario"):
         raise HTTPException(status_code=403, detail="Sem permissão")
 
-    pasta = f"uploads/pacientes/{id}"
-    os.makedirs(pasta, exist_ok=True)
+    # Configurações de armazenamento
+    BASE_DIR = "sxf_fotos_pacientes"
+    MAX_SIZE = 10 * 1024 * 1024  # 10MB
+    EXTENSOES_PERMITIDAS = {"jpg", "jpeg", "png", "heic", "heif"}
 
-    EXTENSOES_PERMITIDAS = {"jpg", "jpeg", "png", "webp"}
+    paciente_slug = to_snake_case(paciente.nome)
+    pasta_paciente = os.path.join(BASE_DIR, paciente_slug)
+    os.makedirs(pasta_paciente, exist_ok=True)
 
-    async def salvar_foto(arquivo: UploadFile, nome: str):
+    async def salvar_foto(arquivo: UploadFile, prefixo: str):
         if not arquivo or not arquivo.filename:
             return None
+        
+        # Validar extensão
         ext = arquivo.filename.rsplit(".", 1)[-1].lower()
         if ext not in EXTENSOES_PERMITIDAS:
-            raise HTTPException(status_code=400, detail=f"Formato inválido: {ext}")
-        caminho = f"{pasta}/{nome}.{ext}"
+            raise HTTPException(status_code=400, detail=f"Formato inválido: {ext}. Use JPG, PNG ou HEIC.")
+        
+        # Validar tamanho
         conteudo = await arquivo.read()
-        with open(caminho, "wb") as f:
+        if len(conteudo) > MAX_SIZE:
+            raise HTTPException(status_code=400, detail="Arquivo muito grande. Limite de 10MB.")
+        
+        nome_arquivo = f"{prefixo}_{paciente_slug}.{ext}"
+        caminho_completo = os.path.join(pasta_paciente, nome_arquivo)
+        
+        with open(caminho_completo, "wb") as f:
             f.write(conteudo)
-        return f"/{caminho}"
+            
+        return f"/{BASE_DIR}/{paciente_slug}/{nome_arquivo}"
 
-    face_path = await salvar_foto(foto_face, "face")
-    esq_path = await salvar_foto(foto_perfil_esq, "perfil_esq")
-    dir_path = await salvar_foto(foto_perfil_dir, "perfil_dir")
+    face_path = await salvar_foto(foto_face, "frontal")
+    esq_path = await salvar_foto(foto_perfil_esq, "lateral_esquerda")
+    dir_path = await salvar_foto(foto_perfil_dir, "lateral_direita")
 
     if face_path is not None:
         paciente.foto_face = face_path
@@ -1109,7 +1156,8 @@ async def api_medicos(db=Depends(get_db)):
 
 
 # ── Uploads ──────────────────────────────────────────────────────────────────
-os.makedirs("uploads/pacientes", exist_ok=True)
+os.makedirs("sxf_fotos_pacientes", exist_ok=True)
+app.mount("/sxf_fotos_pacientes", StaticFiles(directory="sxf_fotos_pacientes"), name="sxf_fotos_pacientes")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── Static files / SPA ────────────────────────────────────────────────────────

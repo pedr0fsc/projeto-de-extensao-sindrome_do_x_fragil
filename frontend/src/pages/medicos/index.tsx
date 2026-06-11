@@ -28,6 +28,7 @@ interface Paciente {
     data_nascimento: string
     telefone: string
     email: string
+    id_instituto: number | null
 }
 
 interface ConsultaRecente {

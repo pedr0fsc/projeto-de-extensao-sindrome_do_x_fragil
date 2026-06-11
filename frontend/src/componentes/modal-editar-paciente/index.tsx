@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../modal-pacientes/modal-pacientes-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
@@ -12,6 +12,7 @@ interface Props {
         data_nascimento: string
         telefone: string
         email: string
+        id_instituto: number | null
     }
     onFechar: () => void
     onSucesso: () => void
@@ -24,10 +25,27 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     const [genero, setGenero] = useState(paciente.sexo)
     const [telefone, setTelefone] = useState(formatarTelefone(paciente.telefone))
     const [email, setEmail] = useState(paciente.email)
+    const [idInstituto, setIdInstituto] = useState<number | ''>(paciente.id_instituto || '')
+    const [instituicoes, setInstituicoes] = useState<{ id: number; nome_fantasia: string }[]>([])
     const [loading, setLoading] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
+    useEffect(() => {
+        fetch('/api/instituicoes')
+            .then(res => res.json())
+            .then(data => setInstituicoes(data || []))
+            .catch(err => console.error('Erro ao carregar instituições:', err))
+    }, [])
+
     const handleSalvar = async () => {
+        if (!nome.trim() || !cpf.trim() || !genero || !dataNascimento || !idInstituto) {
+            mostrarAlerta('Por favor, preencha todos os campos obrigatórios (*).', 'erro')
+            return
+        }
+        if (email.trim() && !email.includes('@')) {
+            mostrarAlerta('O e-mail informado é inválido (deve conter @).', 'erro')
+            return
+        }
         setLoading(true)
         try {
             const response = await fetch(`/api/paciente/${paciente.id}`, {
@@ -39,7 +57,8 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                     sexo: genero,
                     data_nascimento: dataNascimento,
                     telefone: limparFormatacao(telefone),
-                    email
+                    email,
+                    id_instituto: idInstituto || undefined
                 })
             })
             const data = await response.json()
@@ -69,7 +88,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                 <div className='ms-corpo'>
                     <div className='ms-secao'>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Nome completo</label>
+                            <label className='ms-label'>Nome completo *</label>
                             <input 
                                 className='ms-input' 
                                 type="text" 
@@ -80,7 +99,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                         </div>
                         <div className='ms-linha-dupla'>
                             <div className='ms-campo'>
-                                <label className='ms-label'>CPF</label>
+                                <label className='ms-label'>CPF *</label>
                                 <input 
                                     className='ms-input' 
                                     type="text" 
@@ -90,12 +109,12 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                                 />
                             </div>
                             <div className='ms-campo'>
-                                <label className='ms-label'>Data de nascimento</label>
+                                <label className='ms-label'>Data de nascimento *</label>
                                 <input className='ms-input' type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} />
                             </div>
                         </div>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Sexo Biológico</label>
+                            <label className='ms-label'>Sexo Biológico *</label>
                             <div className='ms-radio-grupo'>
                                 {['Masculino', 'Feminino'].map(g => (
                                     <button
@@ -124,6 +143,15 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                                 <label className='ms-label'>E-mail</label>
                                 <input className='ms-input' type="email" value={email} onChange={e => setEmail(e.target.value)} />
                             </div>
+                        </div>
+                        <div className='ms-campo-full'>
+                            <label className='ms-label'>Instituição *</label>
+                            <select className='ms-select' value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
+                                <option value="">Selecione uma instituição</option>
+                                {instituicoes.map(inst => (
+                                    <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>

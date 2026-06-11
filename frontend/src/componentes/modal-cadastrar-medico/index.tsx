@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './modal-cadastrar-medico-estilos.css'
 import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
     onFechar: () => void
+}
+
+interface Instituicao {
+    id: number
+    nome_fantasia: string
 }
 
 export function ModalCadastrarMedico({ onFechar }: Props) {
@@ -15,10 +20,19 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
     const [mostrarSenha, setMostrarSenha] = useState(false)
     const [telefone, setTelefone] = useState('')
     const [crm, setCrm] = useState('')
+    const [idInstituto, setIdInstituto] = useState<number | ''>('')
+    const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
     const [loading, setLoading] = useState(false)
     const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
+
+    useEffect(() => {
+        fetch('/api/instituicoes')
+            .then(res => res.json())
+            .then(data => setInstituicoes(data || []))
+            .catch(err => console.error('Erro ao carregar instituições:', err))
+    }, [])
 
     const erros = {
         nome: !nome.trim(),
@@ -42,7 +56,8 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     senha,
                     telefone: limparFormatacao(telefone),
                     tipo,
-                    crm: tipo === 'Médico' ? crm : undefined
+                    crm: tipo === 'Médico' ? crm : undefined,
+                    id_instituto: idInstituto || undefined
                 })
             })
             const data = await response.json()
@@ -153,15 +168,26 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                         </div>
                     </div>
                     {tipo === 'Médico' && (
-                        <div className='form-campo'>
-                            <label>CRM</label>
-                            <input
-                                type="text"
-                                value={crm}
-                                onChange={e => setCrm(formatarCRM(e.target.value))}
-                                maxLength={9}
-                                placeholder="000000/SP"
-                            />
+                        <div className='form-linha'>
+                            <div className='form-campo'>
+                                <label>CRM</label>
+                                <input
+                                    type="text"
+                                    value={crm}
+                                    onChange={e => setCrm(formatarCRM(e.target.value))}
+                                    maxLength={9}
+                                    placeholder="000000/SP"
+                                />
+                            </div>
+                            <div className='form-campo'>
+                                <label>Instituição</label>
+                                <select value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
+                                    <option value="">Selecione uma instituição</option>
+                                    {instituicoes.map(inst => (
+                                        <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     )}
                 </div>
