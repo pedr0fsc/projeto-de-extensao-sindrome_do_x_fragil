@@ -1078,6 +1078,13 @@ os.makedirs("uploads/pacientes", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ── Static files / SPA ────────────────────────────────────────────────────────
+@app.on_event("startup")
+async def on_startup():
+    init_db()
+    init_seed_data()
+    init_admin()
+
+
 if os.path.exists("frontend/dist"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
