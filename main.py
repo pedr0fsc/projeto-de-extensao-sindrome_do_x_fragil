@@ -31,10 +31,7 @@ def init_db():
     retries = 10
     while retries > 0:
         try:
-            # Try to connect and create tables
             Base.metadata.create_all(bind=engine)
-            
-            # Confirm table creation in logs
             inspector = inspect(engine)
             tables = inspector.get_table_names()
             print(f"--- [DB] Tabelas confirmadas: {', '.join(tables)} ---")
@@ -51,7 +48,6 @@ def init_db():
 def init_seed_data():
     db = SessionLocal()
     try:
-        # Seed Sintomas
         if db.query(Sintoma).count() == 0:
             print("--- [SEED] Populando tabela de sintomas ---")
             sintomas_data = [
@@ -72,7 +68,6 @@ def init_seed_data():
                 db.add(Sintoma(nome=nome, peso_feminino=pf, peso_masculino=pm))
             db.commit()
 
-        # Seed Limiares
         if db.query(Limiar).count() == 0:
             print("--- [SEED] Populando tabela de limiares ---")
             db.add(Limiar(sexo="Masculino", valor=0.56))
@@ -86,10 +81,8 @@ def init_seed_data():
 
 
 def init_admin():
-    # Use a direct engine connection for initialization
     db = SessionLocal()
     try:
-        # Check if any admin exists
         admin = db.query(Usuario).filter(Usuario.tipo == "Administrador").first()
         if not admin:
             print("--- [SEED] Criando administrador inicial ---")
@@ -119,7 +112,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY"),
     session_cookie="sxf_session",
-    max_age=43200 # 12 horas
+    max_age=43200 
 )
 
 # ── Database ──────────────────────────────────────────────────────────────────
@@ -152,7 +145,7 @@ class Medico(Base):
     __tablename__ = "medico"
     id = Column(Integer, ForeignKey("usuario.id"), primary_key=True)
     crm = Column(String(13), unique=True, nullable=False)
-    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=True)  # FK direta
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=True)  
     usuario = relationship("Usuario")
     instituicao = relationship("Instituicao")
 
@@ -171,26 +164,12 @@ class Instituicao(Base):
     cep = Column(String(9), nullable=False)
     cnpj = Column(String(18), nullable=False, unique=True)
 
+
 class InstitutoMedico(Base):
     __tablename__ = "instituto_medico"
     id_instituto = Column(Integer, ForeignKey("instituicao.id"), primary_key=True)
     id_medico = Column(Integer, ForeignKey("medico.id"), primary_key=True)
     vinculo_ativo = Column(Boolean, default=True)
-
-
-class Instituicao(Base):
-    __tablename__ = "instituicao"
-    id = Column(Integer, primary_key=True)
-    nome_fantasia = Column(String(150), nullable=False)
-    nome = Column(String(500))
-    rua = Column(String(150), nullable=False)
-    numero = Column(String(10), nullable=False)
-    complemento = Column(String(100))
-    bairro = Column(String(100), nullable=False)
-    cidade = Column(String(100), nullable=False)
-    estado = Column(String(2), nullable=False)
-    cep = Column(String(9), nullable=False)
-    cnpj = Column(String(18), nullable=False, unique=True)
 
 
 class Paciente(Base):
@@ -369,7 +348,6 @@ def enviar_email(destino: str, nome: str, score: float, recomendacao: str, limia
         <div style="padding: 24px; color: #323232; line-height: 1.6;">
             <p>Prezado(a) responsável pelo paciente <strong>{nome}</strong>,</p>
             <p>O resultado da triagem clínica para a Síndrome do X Frágil foi gerado com sucesso pelo sistema.</p>
-            
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
                 <tr style="background-color: #E0ECDE;">
                     <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold;">Paciente</td>
@@ -388,7 +366,6 @@ def enviar_email(destino: str, nome: str, score: float, recomendacao: str, limia
                     <td style="padding: 10px; border: 1px solid #CDE0C9; font-weight: bold; color: {cor_score};">{recomendacao}</td>
                 </tr>
             </table>
-            
             <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #68B2A0; border-radius: 4px; margin-bottom: 20px;">
                 <p style="margin: 0; font-size: 14px; color: #555;"><strong>Nota Importante:</strong> Esta triagem clínica não é um diagnóstico definitivo. É uma ferramenta de triagem para avaliar a probabilidade e recomendar ou não a realização do exame molecular de DNA (FMR1 PCR).</p>
             </div>
@@ -437,12 +414,14 @@ def gerar_pdf(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -
     buffer.seek(0)
     return buffer
 
+
 def get_institutos_medico(db, id_medico):
     rows = db.query(InstitutoMedico).filter(
         InstitutoMedico.id_medico == id_medico,
         InstitutoMedico.vinculo_ativo == True
     ).all()
     return [r.id_instituto for r in rows]
+
 
 def sincronizar_ativo_medico(db, id_medico):
     tem_vinculo_ativo = db.query(InstitutoMedico).filter(
@@ -475,9 +454,6 @@ async def api_login(request: Request, db=Depends(get_db)):
     return {"success": True, "tipo": user.tipo, "nome": user.nome}
 
 
-
-=========
->>>>>>>>> Temporary merge branch 2
 @app.post("/api/logout")
 async def api_logout(request: Request):
     request.session.clear()
@@ -529,16 +505,13 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
             <p>Olá, <strong>{user.nome}</strong>,</p>
             <p>Recebemos uma solicitação para redefinir a senha da sua conta na Plataforma de Triagem Síndrome do X Frágil.</p>
             <p>Para criar uma nova senha, clique no botão abaixo (este link é válido por 1 hora):</p>
-            
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{link}" style="display: inline-block; padding: 12px 30px; background-color: #68B2A0; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     Redefinir Senha
                 </a>
             </div>
-            
             <p style="font-size: 13px; color: #666;">Se o botão acima não funcionar, copie e cole o link a seguir no seu navegador:</p>
             <p style="font-size: 12px; color: #2C6975; word-break: break-all; background-color: #E0ECDE; padding: 10px; border-radius: 4px;">{link}</p>
-            
             <p style="margin-top: 30px;">Se você não solicitou essa redefinição, por favor ignore este e-mail. Sua senha permanecerá segura.</p>
         </div>
         <div style="border-top: 1px solid #E0ECDE; padding: 15px; text-align: center; color: #777777; font-size: 12px;">
@@ -558,7 +531,6 @@ async def api_password_reset_request(request: Request, background_tasks: Backgro
     )
 
     background_tasks.add_task(enviar_email_smtp, user.email, subject, html_content, text_content)
-    
     return {"success": True}
 
 
@@ -580,7 +552,6 @@ async def api_password_reset_reset(request: Request, db=Depends(get_db)):
     user.token_recuperacao = None
     user.token_expiracao = None
     db.commit()
-    
     return {"success": True}
 
 
@@ -675,15 +646,6 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
 
-<<<<<<<<< Temporary merge branch 1
-    id_instituto = body.get("id_instituto")
-    if id_instituto is not None:
-        instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
-    else:
-        inst_ids = get_institutos_medico(db, request.session.get("id_usuario"))
-        instituicao = db.query(Instituicao).filter(Instituicao.id == inst_ids[0]).first() if inst_ids else get_default_instituicao(db)
-=========
-    instituicao = None
     id_instituto = body.get("id_instituto")
     if id_instituto is not None:
         instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
@@ -691,7 +653,6 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
         instituicao = db.query(Instituicao).filter(Instituicao.id == medico.id_instituto).first()
     else:
         instituicao = get_default_instituicao(db)
->>>>>>>>> Temporary merge branch 2
 
     if not instituicao:
         raise HTTPException(status_code=400, detail="Instituição não encontrada")
@@ -997,9 +958,10 @@ async def api_atualizar_paciente(id: int, request: Request, db=Depends(get_db), 
     db.commit()
     return {"success": True}
 
+
 @app.put("/api/usuario/{id}/instituto/{id_instituto}/ativo")
 async def api_toggle_vinculo(id: int, id_instituto: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
-    body = await request.json()  # {"ativo": true/false}
+    body = await request.json()  
     vinculo = db.query(InstitutoMedico).filter(
         InstitutoMedico.id_medico == id,
         InstitutoMedico.id_instituto == id_instituto
@@ -1011,6 +973,7 @@ async def api_toggle_vinculo(id: int, id_instituto: int, request: Request, db=De
     sincronizar_ativo_medico(db, id)
     db.commit()
     return {"success": True}
+
 
 @app.post("/api/paciente/{id}/fotos")
 async def api_upload_fotos_paciente(
@@ -1026,7 +989,7 @@ async def api_upload_fotos_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
     is_admin = request.session.get("tipo") == "Administrador"
-    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+    if not is_admin and paciente.id_medico_responsavel != request.session.get("id_usuario"):
         raise HTTPException(status_code=403, detail="Sem permissão")
 
     pasta = f"uploads/pacientes/{id}"
@@ -1071,10 +1034,9 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
     user = db.query(Usuario).filter(Usuario.id == id).first()
     if user:
         user.ativo = False
-        if user.tipo == "Médico":
-            db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == id).update(
-                {"vinculo_ativo": False}
-            )
+        db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == id).update(
+            {"vinculo_ativo": False}
+        )
         db.commit()
     return {"success": True}
 
@@ -1082,17 +1044,10 @@ async def api_excluir_usuario(id: int, db=Depends(get_db), _=Depends(require_adm
 @app.post("/api/paciente/trocar_medico")
 async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(require_admin)):
     body = await request.json()
-<<<<<<<<< Temporary merge branch 1
-    inst_ids = get_institutos_medico(db, body["novo_medico_id"])
-    update_data = {"id_medico_responsavel": body["novo_medico_id"]}
-    if inst_ids:
-        update_data["id_instituto"] = inst_ids[0]
-=========
     novo_medico = db.query(Medico).filter(Medico.id == body["novo_medico_id"]).first()
     update_data = {"id_medico_responsavel": body["novo_medico_id"]}
     if novo_medico and novo_medico.id_instituto:
         update_data["id_instituto"] = novo_medico.id_instituto
->>>>>>>>> Temporary merge branch 2
     db.query(Paciente).filter(Paciente.id == body["paciente_id"]).update(update_data)
     db.commit()
     return {"success": True}
@@ -1111,15 +1066,8 @@ async def api_medicos(db=Depends(get_db)):
             "telefone": m.usuario.telefone,
             "tipo": m.usuario.tipo,
             "ativo": bool(m.usuario.ativo),
-<<<<<<<<< Temporary merge branch 1
-            "vinculos": [
-                {"id_instituto": v.id_instituto, "ativo": bool(v.vinculo_ativo)}
-                for v in db.query(InstitutoMedico).filter(InstitutoMedico.id_medico == m.id).all()
-            ],
-=========
             "id_instituto": m.id_instituto,
             "instituicao": m.instituicao.nome_fantasia if m.instituicao else None,
->>>>>>>>> Temporary merge branch 2
         }
         for m in medicos
     ]
