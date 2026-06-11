@@ -1,6 +1,7 @@
 import os
 import secrets
 import smtplib
+import time
 from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
@@ -14,15 +15,15 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, DECIMAL, ForeignKey,
-    Integer, String, Text, Enum as SQLEnum, create_engine,
+    Integer, String, Text, Enum as SQLEnum, create_engine, inspect, text
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+import uvicorn
 
 
 def init_db():
@@ -33,8 +34,31 @@ def init_db():
             # Try to connect and create tables
             Base.metadata.create_all(bind=engine)
             
-            # Confirm table creation in logs
+            # --- Migrações Manuais (Adicionar colunas se não existirem) ---
             inspector = inspect(engine)
+            
+            # Migração para a tabela 'medico'
+            columns_medico = [c["name"] for c in inspector.get_columns("medico")]
+            if "id_instituto" not in columns_medico:
+                print("--- [DB MIGRATION] Adicionando coluna 'id_instituto' na tabela 'medico' ---")
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE medico ADD COLUMN id_instituto INT NULL"))
+                    conn.execute(text("ALTER TABLE medico ADD CONSTRAINT fk_medico_instituicao FOREIGN KEY (id_instituto) REFERENCES instituicao(id)"))
+
+            # Migração para a tabela 'paciente'
+            columns_paciente = [c["name"] for c in inspector.get_columns("paciente")]
+            cols_to_add = {
+                "foto_face": "VARCHAR(255) NULL",
+                "foto_perfil_esq": "VARCHAR(255) NULL",
+                "foto_perfil_dir": "VARCHAR(255) NULL"
+            }
+            for col, definition in cols_to_add.items():
+                if col not in columns_paciente:
+                    print(f"--- [DB MIGRATION] Adicionando coluna '{col}' na tabela 'paciente' ---")
+                    with engine.begin() as conn:
+                        conn.execute(text(f"ALTER TABLE paciente ADD COLUMN {col} {definition}"))
+
+            # Confirm table creation in logs
             tables = inspector.get_table_names()
             print(f"--- [DB] Tabelas confirmadas: {', '.join(tables)} ---")
             return
@@ -175,21 +199,6 @@ class InstitutoMedico(Base):
     id_instituto = Column(Integer, ForeignKey("instituicao.id"), primary_key=True)
     id_medico = Column(Integer, ForeignKey("medico.id"), primary_key=True)
     vinculo_ativo = Column(Boolean, default=True)
-
-
-class Instituicao(Base):
-    __tablename__ = "instituicao"
-    id = Column(Integer, primary_key=True)
-    nome_fantasia = Column(String(150), nullable=False)
-    nome = Column(String(500))
-    rua = Column(String(150), nullable=False)
-    numero = Column(String(10), nullable=False)
-    complemento = Column(String(100))
-    bairro = Column(String(100), nullable=False)
-    cidade = Column(String(100), nullable=False)
-    estado = Column(String(2), nullable=False)
-    cep = Column(String(9), nullable=False)
-    cnpj = Column(String(18), nullable=False, unique=True)
 
 
 class Paciente(Base):
@@ -1014,7 +1023,7 @@ async def api_upload_fotos_paciente(
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
     is_admin = request.session.get("tipo") == "Administrador"
-    if not is_admin and paciente.id_medico_que_cadastrou != request.session.get("id_usuario"):
+    if not is_admin and paciente.id_medico_responsavel != request.session.get("id_usuario"):
         raise HTTPException(status_code=403, detail="Sem permissão")
 
     pasta = f"uploads/pacientes/{id}"
@@ -1119,3 +1128,12 @@ else:
     print("frontend/dist não encontrado - Rodando sem React")
 
 handler = Mangum(app)
+
+if __name__ == "__main__":
+    init_db()
+    init_seed_data()
+    init_admin()
+    
+    port = int(os.getenv("PORT", 3001))
+    print(f"--- [APP] Iniciando servidor na porta {port} ---")
+    uvicorn.run(app, host="0.0.0.0", port=port)
