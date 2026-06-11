@@ -39,7 +39,7 @@ CREATE TABLE usuario(
 SELECT 'Criando tabela medico...' AS info;
 CREATE TABLE medico(
     id INT PRIMARY KEY,
-    id_instituto INT NOT NULL,
+    id_instituto INT NULL,
     crm VARCHAR(13) NOT NULL UNIQUE,
     FOREIGN KEY (id_instituto) REFERENCES instituicao(id),
     FOREIGN KEY (id) REFERENCES usuario(id)
