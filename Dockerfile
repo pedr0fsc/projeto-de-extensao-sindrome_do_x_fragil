@@ -34,5 +34,4 @@ COPY --from=build-stage /app/frontend/dist ./frontend/dist
 ENV PORT=3001
 
 # Command to start your application
-# Ensure main.py is set up to listen on port 3001
-CMD ["python", "main.py"]
+CMD ["python", "-m", "app.main"]
