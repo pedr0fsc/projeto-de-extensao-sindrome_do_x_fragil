@@ -38,7 +38,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     }, [])
 
     const handleSalvar = async () => {
-        if (!nome.trim() || !cpf.trim() || !genero || !dataNascimento || !idInstituto) {
+        if (!nome.trim() || !cpf.trim() || !genero || !dataNascimento) {
             mostrarAlerta('Por favor, preencha todos os campos obrigatórios (*).', 'erro')
             return
         }
@@ -145,7 +145,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                             </div>
                         </div>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Instituição *</label>
+                            <label className='ms-label'>Instituição</label>
                             <select className='ms-select' value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
                                 <option value="">Selecione uma instituição</option>
                                 {instituicoes.map(inst => (

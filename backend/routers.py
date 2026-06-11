@@ -175,6 +175,7 @@ async def api_buscar_paciente(request: Request, db: Session = Depends(get_db)):
                 "id": paciente.id, "nome": paciente.nome, "cpf": paciente.cpf, "sexo": paciente.sexo,
                 "data_nascimento": str(paciente.data_nascimento), "telefone": paciente.telefone, "email": paciente.email,
                 "foto_face": fotos.get("Frente"), "foto_perfil_esq": fotos.get("Lado Esquerdo"), "foto_perfil_dir": fotos.get("Lado Direito"),
+                "instituicao": paciente.instituicao.nome_fantasia if paciente.instituicao else "-",
             },
         }
     return {"found": True, "sem_acesso": True, "medico_nome": paciente.medico.usuario.nome if paciente.medico else "outro médico"}
@@ -186,7 +187,7 @@ async def api_cadastrar_paciente(request: Request, db: Session = Depends(get_db)
     id_usuario = request.session.get("id_usuario")
     medico = db.query(Medico).filter(Medico.id == id_usuario).first()
     
-    id_inst = body.get("id_instituto") or (medico.id_instituto if medico else None) or get_default_instituicao(db).id
+    id_inst = body.get("id_instituto") or (medico.id_instituto if medico else None)
     id_medico = medico.id if medico else db.query(Medico).first().id
     
     novo = Paciente(
@@ -213,6 +214,7 @@ async def api_listar_pacientes(request: Request, db: Session = Depends(get_db)):
         res.append({
             "id": p.id, "nome": p.nome, "cpf": p.cpf, "sexo": p.sexo, "data_nascimento": str(p.data_nascimento),
             "telefone": p.telefone, "email": p.email, "id_instituto": p.id_instituto,
+            "instituicao": p.instituicao.nome_fantasia if p.instituicao else None,
             "foto_face": fotos.get("Frente"), "foto_perfil_esq": fotos.get("Lado Esquerdo"), "foto_perfil_dir": fotos.get("Lado Direito"),
         })
     return res
@@ -221,19 +223,37 @@ async def api_listar_pacientes(request: Request, db: Session = Depends(get_db)):
 async def api_triagem(request: Request, db: Session = Depends(get_db)):
     require_auth(request)
     body = await request.json()
-    paciente = db.query(Paciente).filter(Paciente.id == body["paciente_id"]).first()
+    paciente_id = body.get("paciente_id")
+    if not paciente_id:
+        raise HTTPException(status_code=400, detail="ID do paciente é obrigatório")
+        
+    paciente = db.query(Paciente).filter(Paciente.id == paciente_id).first()
+    if not paciente:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+        
     medico_id = request.session.get("id_usuario") or db.query(Medico).first().id
+    sintomas = body.get("sintomas", {})
     
-    score = calcular_score(body["sintomas"], paciente.sexo, db)
+    score = calcular_score(sintomas, paciente.sexo, db)
     limiar = get_limiar(db, paciente.sexo)
     atingiu = score >= limiar
     rec = "ENCAMINHAR para teste genético FMR1" if atingiu else "MANTER em observação clínica"
     
-    triagem = Triagem(id_medico=medico_id, id_paciente=paciente.id, nome_responsavel=body.get("nome_responsavel"), grau_responsavel=body.get("grau_responsavel"), observacoes=body.get("observacoes", ""))
+    triagem = Triagem(
+        id_medico=medico_id, 
+        id_paciente=paciente.id, 
+        nome_responsavel=body.get("nome_responsavel") or "Não informado", 
+        grau_responsavel=body.get("grau_responsavel") or "Não informado", 
+        observacoes=body.get("observacoes", "")
+    )
     db.add(triagem); db.flush()
     
     for s in db.query(Sintoma).all():
-        db.add(TriagemSintoma(id_sintoma=s.id, id_triagem=triagem.id, presente=body["sintomas"].get(str(s.id), False)))
+        db.add(TriagemSintoma(
+            id_sintoma=s.id, 
+            id_triagem=triagem.id, 
+            presente=sintomas.get(str(s.id), False) if isinstance(sintomas, dict) else False
+        ))
     
     res_obj = Resultado(id_triagem=triagem.id, limiar=limiar, score_total=score, atingiu_limiar=atingiu, justificativa=rec)
     db.add(res_obj); db.flush()

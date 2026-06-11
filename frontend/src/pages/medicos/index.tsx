@@ -29,6 +29,7 @@ interface Paciente {
     telefone: string
     email: string
     id_instituto: number | null
+    instituicao?: string | null
 }
 
 interface ConsultaRecente {
@@ -399,6 +400,7 @@ export function PaginaMedicos() {
                                             <th>Nome</th>
                                             <th>Idade</th>
                                             <th>Sexo Biológico</th>
+                                            <th>Instituição</th>
                                             <th>Nascimento</th>
                                             <th>CPF</th>
                                             <th>Ações</th>
@@ -410,6 +412,7 @@ export function PaginaMedicos() {
                                                 <td>{p.nome}</td>
                                                 <td>{calcularIdade(p.data_nascimento)} anos</td>
                                                 <td>{p.sexo}</td>
+                                                <td>{p.instituicao || '-'}</td>
                                                 <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
                                                 <td>{formatarCPF(p.cpf)}</td>
                                                 <td>

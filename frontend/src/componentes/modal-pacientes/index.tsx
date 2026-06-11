@@ -97,7 +97,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
     }
 
     const validarStep1 = () => {
-        if (!nome.trim() || !cpf.trim() || !dataNascimento || !genero || !idInstituto) {
+        if (!nome.trim() || !cpf.trim() || !dataNascimento || !genero) {
             mostrarAlerta('Por favor, preencha todos os campos obrigatórios (*).', 'erro')
             return false
         }
@@ -308,7 +308,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                 </div>
                             </div>
                             <div className='ms-campo-full'>
-                                <label className='ms-label'>Instituição *</label>
+                                <label className='ms-label'>Instituição</label>
                                 <select className='ms-select' value={idInstituto} onChange={e => setIdInstituto(Number(e.target.value))}>
                                     <option value="">Selecione uma instituição</option>
                                     {instituicoes.map(inst => (

@@ -44,6 +44,7 @@ interface Paciente {
     telefone: string
     email: string
     id_instituto: number | null
+    instituicao?: string | null
     foto_face?: string | null
     foto_perfil_esq?: string | null
     foto_perfil_dir?: string | null
@@ -518,9 +519,6 @@ export function PaginaAdministrador() {
                             <div className='admin-filtros-header'>
                                 <h2>Filtros:</h2>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir btn-inserir-secundario'>
-                                        + Instituição
-                                    </button>
                                     <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
                                         + Inserir usuário
                                     </button>
@@ -604,19 +602,22 @@ export function PaginaAdministrador() {
                                             <th>Nome</th>
                                             <th>Idade</th>
                                             <th>Sexo Biológico</th>
+                                            <th>Instituição</th>
                                             <th>Nascimento</th>
                                             <th>CPF</th>
                                             <th>Ações</th>
                                         </tr>
-                                    </thead>
-                                    <tbody>
+                                        </thead>
+                                        <tbody>
                                         {sortedPacientes.map((p, i) => (
                                             <tr key={i}>
                                                 <td>{p.nome}</td>
                                                 <td>{calcularIdade(p.data_nascimento)} anos</td>
                                                 <td>{p.sexo}</td>
+                                                <td>{p.instituicao || '-'}</td>
                                                 <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
                                                 <td>{formatarCPF(p.cpf)}</td>
+
                                                 <td>
                                                     <div className='acoes-celula'>
                                                         <button

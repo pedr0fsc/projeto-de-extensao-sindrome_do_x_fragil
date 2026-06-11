@@ -2,6 +2,7 @@ import os
 import re
 import smtplib
 import unicodedata
+from datetime import datetime
 from hashlib import sha256
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -21,6 +22,9 @@ def get_limiar(db, sexo: str) -> float:
     return float(limiar.valor) if limiar else (0.56 if sexo == "Masculino" else 0.55)
 
 def calcular_score(sintomas_marcados: dict, sexo: str, db) -> float:
+    if not sintomas_marcados:
+        return 0.0
+    
     score = sum(
         (float(s.peso_masculino) if sexo == "Masculino" else float(s.peso_feminino or 0))
         for s in db.query(Sintoma).all()
