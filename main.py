@@ -1,6 +1,7 @@
 import os
 import secrets
 import smtplib
+import time
 from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
@@ -16,15 +17,15 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import (
     Boolean, Column, Date, DateTime, DECIMAL, ForeignKey,
-    Integer, String, Text, Enum as SQLEnum, create_engine,
+    Integer, String, Text, Enum as SQLEnum, create_engine, inspect, text
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from mangum import Mangum
+import uvicorn
 
 
 def init_db():
@@ -33,7 +34,32 @@ def init_db():
     while retries > 0:
         try:
             Base.metadata.create_all(bind=engine)
+            
+            # --- Migrações Manuais (Adicionar colunas se não existirem) ---
             inspector = inspect(engine)
+            
+            # Migração para a tabela 'medico'
+            columns_medico = [c["name"] for c in inspector.get_columns("medico")]
+            if "id_instituto" not in columns_medico:
+                print("--- [DB MIGRATION] Adicionando coluna 'id_instituto' na tabela 'medico' ---")
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE medico ADD COLUMN id_instituto INT NULL"))
+                    conn.execute(text("ALTER TABLE medico ADD CONSTRAINT fk_medico_instituicao FOREIGN KEY (id_instituto) REFERENCES instituicao(id)"))
+
+            # Migração para a tabela 'paciente'
+            columns_paciente = [c["name"] for c in inspector.get_columns("paciente")]
+            cols_to_add = {
+                "foto_face": "VARCHAR(255) NULL",
+                "foto_perfil_esq": "VARCHAR(255) NULL",
+                "foto_perfil_dir": "VARCHAR(255) NULL"
+            }
+            for col, definition in cols_to_add.items():
+                if col not in columns_paciente:
+                    print(f"--- [DB MIGRATION] Adicionando coluna '{col}' na tabela 'paciente' ---")
+                    with engine.begin() as conn:
+                        conn.execute(text(f"ALTER TABLE paciente ADD COLUMN {col} {definition}"))
+
+            # Confirm table creation in logs
             tables = inspector.get_table_names()
             print(f"--- [DB] Tabelas confirmadas: {', '.join(tables)} ---")
             return
@@ -145,7 +171,7 @@ class Medico(Base):
     __tablename__ = "medico"
     id = Column(Integer, ForeignKey("usuario.id"), primary_key=True)
     crm = Column(String(13), unique=True, nullable=False)
-    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=True)  
+    id_instituto = Column(Integer, ForeignKey("instituicao.id"), nullable=True)  # FK direta
     usuario = relationship("Usuario")
     instituicao = relationship("Instituicao")
 
@@ -163,7 +189,6 @@ class Instituicao(Base):
     estado = Column(String(2), nullable=False)
     cep = Column(String(9), nullable=False)
     cnpj = Column(String(18), nullable=False, unique=True)
-
 
 class InstitutoMedico(Base):
     __tablename__ = "instituto_medico"
@@ -646,6 +671,7 @@ async def api_cadastrar_paciente(request: Request, db=Depends(get_db), _=Depends
     if not medico and request.session.get("tipo") != "Administrador":
         raise HTTPException(status_code=400, detail="Médico não encontrado")
 
+    instituicao = None
     id_instituto = body.get("id_instituto")
     if id_instituto is not None:
         instituicao = db.query(Instituicao).filter(Instituicao.id == id_instituto).first()
@@ -1100,6 +1126,13 @@ if os.path.exists("frontend/dist"):
 else:
     print("frontend/dist não encontrado - Rodando sem React")
 
-uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 3001)))
-
 handler = Mangum(app)
+
+if __name__ == "__main__":
+    init_db()
+    init_seed_data()
+    init_admin()
+    
+    port = int(os.getenv("PORT", 3001))
+    print(f"--- [APP] Iniciando servidor na porta {port} ---")
+    uvicorn.run(app, host="0.0.0.0", port=port)
