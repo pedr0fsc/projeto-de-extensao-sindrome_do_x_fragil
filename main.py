@@ -4,6 +4,7 @@ import smtplib
 from datetime import datetime, timedelta
 from hashlib import sha256
 from io import BytesIO
+import uvicorn
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -28,7 +29,7 @@ from mangum import Mangum
 
 def init_db():
     print("--- [DB] Aguardando conexão com o banco de dados... ---")
-    retries = 10
+    retries = 3
     while retries > 0:
         try:
             Base.metadata.create_all(bind=engine)
@@ -40,9 +41,8 @@ def init_db():
             retries -= 1
             print(f"--- [DB CONNECT] Banco de dados ainda não está pronto (Tentativas restantes: {retries}) ---")
             if retries == 0:
-                print(f"--- [DB FATAL ERROR] Erro final ao conectar: {e} ---")
-                raise e
-            time.sleep(5)
+                print(f"--- [DB WARNING] Não conseguiu conectar agora, mas iniciando o app assim mesmo... ---")
+            time.sleep(2)
 
 
 def init_seed_data():
@@ -1085,6 +1085,7 @@ async def on_startup():
     init_admin()
 
 
+
 if os.path.exists("frontend/dist"):
     app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
 
@@ -1098,5 +1099,7 @@ if os.path.exists("frontend/dist"):
         return FileResponse("frontend/dist/index.html")
 else:
     print("frontend/dist não encontrado - Rodando sem React")
+
+uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 3001)))
 
 handler = Mangum(app)
