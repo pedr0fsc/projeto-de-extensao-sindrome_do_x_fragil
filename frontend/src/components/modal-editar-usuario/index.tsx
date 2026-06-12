@@ -33,9 +33,8 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
     const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario?.tipo as any || 'Médico')
     const [loading, setLoading] = useState(false)
-    const { mostrarAlerta } = useAlerta()
-
     const [tentouSubmit, setTentouSubmit] = useState(false)
+    const { mostrarAlerta } = useAlerta()
 
     useEffect(() => {
         fetch('/api/instituicoes')
@@ -107,19 +106,19 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>CPF</label>
-                            <input 
-                                type="text" 
-                                value={cpf} 
-                                onChange={e => setCpf(formatarCPF(e.target.value))} 
+                            <input
+                                type="text"
+                                value={cpf}
+                                onChange={e => setCpf(formatarCPF(e.target.value))}
                                 maxLength={14}
                             />
                         </div>
                         <div className='form-campo'>
                             <label>Telefone</label>
-                            <input 
-                                type="text" 
-                                value={telefone} 
-                                onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                            <input
+                                type="text"
+                                value={telefone}
+                                onChange={e => setTelefone(formatarTelefone(e.target.value))}
                                 maxLength={15}
                             />
                         </div>
@@ -127,7 +126,7 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>Tipo</label>
-                            <select value={tipo} onChange={e => setTipo(e.target.value as any)}>
+                            <select value={tipo} onChange={e => setTipo(e.target.value as 'Médico' | 'Administrador')}>
                                 <option value="Médico">Médico</option>
                                 <option value="Administrador">Administrador</option>
                             </select>
@@ -154,7 +153,6 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                                     ))}
                                 </select>
                             </div>
-
                         </div>
                     )}
                 </div>
@@ -170,3 +168,5 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
         </div>
     )
 }
+
+export default ModalEditarUsuario

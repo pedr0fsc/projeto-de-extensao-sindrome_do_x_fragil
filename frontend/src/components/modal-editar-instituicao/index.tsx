@@ -24,16 +24,16 @@ interface Props {
 }
 
 export function ModalEditarInstituicao({ instituicao, onFechar, onSucesso }: Props) {
-    const [nomeFantasia, setNomeFantasia] = useState(instituicao?.nome_fantasia || '')
-    const [nome, setNome] = useState(instituicao?.nome || '')
-    const [cnpj, setCnpj] = useState(instituicao?.cnpj ? formatarCNPJ(instituicao.cnpj) : '')
-    const [cep, setCep] = useState(instituicao?.cep || '')
-    const [rua, setRua] = useState(instituicao?.rua || '')
-    const [numero, setNumero] = useState(instituicao?.numero || '')
-    const [complemento, setComplemento] = useState(instituicao?.complemento || '')
-    const [bairro, setBairro] = useState(instituicao?.bairro || '')
-    const [cidade, setCidade] = useState(instituicao?.cidade || '')
-    const [estado, setEstado] = useState(instituicao?.estado || '')
+    const [nomeFantasia, setNomeFantasia] = useState(instituicao.nome_fantasia)
+    const [nome, setNome] = useState(instituicao.nome || '')
+    const [cnpj, setCnpj] = useState(formatarCNPJ(instituicao.cnpj))
+    const [cep, setCep] = useState(instituicao.cep)
+    const [rua, setRua] = useState(instituicao.rua)
+    const [numero, setNumero] = useState(instituicao.numero)
+    const [complemento, setComplemento] = useState(instituicao.complemento || '')
+    const [bairro, setBairro] = useState(instituicao.bairro)
+    const [cidade, setCidade] = useState(instituicao.cidade)
+    const [estado, setEstado] = useState(instituicao.estado)
     const [loading, setLoading] = useState(false)
     const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
@@ -57,7 +57,7 @@ export function ModalEditarInstituicao({ instituicao, onFechar, onSucesso }: Pro
             const response = await fetch(`/api/instituicao/${instituicao.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome_fantasia: nomeFantasia, nome, cnpj: cnpj.replace(/\D/g, ''), rua, numero, complemento, bairro, cidade, estado, cep })
+                body: JSON.stringify({ nome_fantasia: nomeFantasia, nome, cnpj, rua, numero, complemento, bairro, cidade, estado, cep })
             })
             const data = await response.json()
             if (data.success) {

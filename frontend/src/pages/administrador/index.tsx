@@ -122,13 +122,9 @@ export function PaginaAdministrador() {
   const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false);
   const [modalInstituicaoAberto, setModalInstituicaoAberto] = useState(false);
   const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null);
-  const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(
-    null,
-  );
-  const [pacienteFotosVisualizar, setPacienteFotosVisualizar] =
-    useState<Paciente | null>(null);
-  const [instituicaoParaEditar, setInstituicaoParaEditar] =
-    useState<Instituicao | null>(null);
+  const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null);
+  const [pacienteFotosVisualizar, setPacienteFotosVisualizar] = useState<Paciente | null>(null);
+  const [instituicaoParaEditar, setInstituicaoParaEditar] = useState<Instituicao | null>(null);
   const [visao, setVisao] = useState<Visao>("dashboard");
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -164,13 +160,10 @@ export function PaginaAdministrador() {
     else setSearchPacientes(val);
   };
 
-  const [sortMedicosField, setSortMedicosField] =
-    useState<SortMedicosField>("nome");
+  const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>("nome");
   const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>("asc");
-  const [sortPacientesField, setSortPacientesField] =
-    useState<SortPacientesField>("nome");
-  const [sortPacientesOrder, setSortPacientesOrder] =
-    useState<SortOrder>("asc");
+  const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>("nome");
+  const [sortPacientesOrder, setSortPacientesOrder] = useState<SortOrder>("asc");
 
   const handleSortMedicos = (field: SortMedicosField) => {
     if (sortMedicosField === field)
@@ -195,25 +188,19 @@ export function PaginaAdministrador() {
       const response = await fetch(`/api/usuario/${medico.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ativo: !medico.ativo,
-        }),
+        body: JSON.stringify({ ativo: !medico.ativo }),
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
         alert("Não foi possível alterar o status do médico.");
         return;
       }
-      setMedicos((prev) =>
-        prev.map((m) => (m.id === medico.id ? { ...m, ativo: !medico.ativo } : m))
-      );
+      await fetchData();
     } catch (err) {
       console.error("Erro ao alterar status do médico:", err);
       alert("Erro de conexão ao alterar status do médico.");
     }
   };
-
-  // ── Filtered + sorted lists ──────────────────────────────────────────────
 
   const atividadesMedicos = useMemo(() => {
     const term = searchDashboard.toLowerCase();
@@ -332,7 +319,6 @@ export function PaginaAdministrador() {
     );
   }, [instituicoes, searchInstituicoes]);
 
-  // ── Data fetching ────────────────────────────────────────────────────────
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -483,44 +469,24 @@ export function PaginaAdministrador() {
 
               <div className="dashboard-cards">
                 <div className="dashboard-card dashboard-card-destaque">
-                  <span className="dashboard-card-titulo">
-                    Total de Médicos
-                  </span>
-                  <span className="dashboard-card-valor">
-                    {stats.totalMedicos}
-                  </span>
-                  <span className="dashboard-card-sub">
-                    Cadastrados no sistema
-                  </span>
+                  <span className="dashboard-card-titulo">Total de Médicos</span>
+                  <span className="dashboard-card-valor">{stats.totalMedicos}</span>
+                  <span className="dashboard-card-sub">Cadastrados no sistema</span>
                 </div>
                 <div className="dashboard-card dashboard-card-destaque">
-                  <span className="dashboard-card-titulo">
-                    Total de Pacientes
-                  </span>
-                  <span className="dashboard-card-valor">
-                    {stats.totalPacientes}
-                  </span>
+                  <span className="dashboard-card-titulo">Total de Pacientes</span>
+                  <span className="dashboard-card-valor">{stats.totalPacientes}</span>
                   <span className="dashboard-card-sub">Cadastrados</span>
                 </div>
                 <div className="dashboard-card dashboard-card-destaque">
-                  <span className="dashboard-card-titulo">
-                    Total de Triagens
-                  </span>
-                  <span className="dashboard-card-valor">
-                    {stats.totalTriagens}
-                  </span>
-                  <span className="dashboard-card-sub">
-                    Realizadas no total
-                  </span>
+                  <span className="dashboard-card-titulo">Total de Triagens</span>
+                  <span className="dashboard-card-valor">{stats.totalTriagens}</span>
+                  <span className="dashboard-card-sub">Realizadas no total</span>
                 </div>
                 <div className="dashboard-card dashboard-card-destaque">
                   <span className="dashboard-card-titulo">Encaminhados</span>
-                  <span className="dashboard-card-valor">
-                    {stats.encaminhados}
-                  </span>
-                  <span className="dashboard-card-sub">
-                    Para teste genético
-                  </span>
+                  <span className="dashboard-card-valor">{stats.encaminhados}</span>
+                  <span className="dashboard-card-sub">Para teste genético</span>
                 </div>
               </div>
 
@@ -559,9 +525,7 @@ export function PaginaAdministrador() {
               </div>
 
               <div className="admin-tabela-container">
-                <h3 className="dashboard-secao-titulo">
-                  Últimas Triagens Realizadas
-                </h3>
+                <h3 className="dashboard-secao-titulo">Últimas Triagens Realizadas</h3>
                 <table className="admin-tabela">
                   <thead>
                     <tr>
@@ -594,6 +558,13 @@ export function PaginaAdministrador() {
               <div className="admin-filtros-header">
                 <h2>Filtros:</h2>
                 <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => setModalInstituicaoAberto(true)}
+                    className="btn-inserir"
+                    style={{ background: "var(--cor-terciaria)" }}
+                  >
+                    + Instituição
+                  </button>
                   <button
                     onClick={() => setModalCadastrarAberto(true)}
                     className="btn-inserir"
@@ -741,6 +712,7 @@ export function PaginaAdministrador() {
               </div>
             </div>
           )}
+
           {/* ── Instituições view ── */}
           {visao === "instituicoes" && (
             <div className="admin-secao">

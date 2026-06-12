@@ -131,7 +131,7 @@ async def api_limiares(db: Session = Depends(get_db)):
 
 @router.get("/api/instituicoes")
 async def api_instituicoes(db: Session = Depends(get_db)):
-    return [{"id": i.id, "nome_fantasia": i.nome_fantasia, "nome": i.nome, "cidade": i.cidade, "estado": i.estado, "cnpj": i.cnpj} for i in db.query(Instituicao).all()]
+    return [{"id": i.id, "nome_fantasia": i.nome_fantasia, "nome": i.nome or "", "cnpj": i.cnpj, "cep": i.cep or "", "rua": i.rua or "", "numero": i.numero or "", "complemento": i.complemento or "", "bairro": i.bairro or "", "cidade": i.cidade or "", "estado": i.estado or ""} for i in db.query(Instituicao).all()]
 
 @router.post("/api/instituicao")
 async def api_criar_instituicao(request: Request, db: Session = Depends(get_db)):

@@ -35,14 +35,13 @@ if os.path.exists("frontend/dist"):
 
     @app.get("/{full_path:path}")
     async def serve_spa(request: Request, full_path: str):
-        # Prevent API routes from being served by the SPA fallback
         if full_path.startswith(("api/", "assets/", "sxf_fotos_pacientes/", "uploads/")):
             raise HTTPException(status_code=404)
-        
+
         file_path = f"frontend/dist/{full_path}"
         if os.path.exists(file_path) and not os.path.isdir(file_path):
             return FileResponse(file_path)
-        
+
         return FileResponse("frontend/dist/index.html")
 else:
     print("--- [WARNING] frontend/dist não encontrado. SPA não será servido. ---")
@@ -51,12 +50,11 @@ else:
 handler = Mangum(app)
 
 if __name__ == "__main__":
-    # Startup tasks
     print("--- [APP] Iniciando inicialização do sistema ---")
     init_db()
     init_seed_data()
     init_admin()
-    
+
     port = int(os.getenv("PORT", 3001))
     print(f"--- [APP] Servidor rodando em http://0.0.0.0:{port} ---")
     uvicorn.run(app, host="0.0.0.0", port=port)

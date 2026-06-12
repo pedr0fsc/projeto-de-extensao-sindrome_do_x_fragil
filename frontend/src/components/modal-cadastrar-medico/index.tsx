@@ -127,8 +127,8 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                     onChange={e => setSenha(e.target.value)}
                                     className={tentouSubmit && erros.senha ? 'input-erro' : ''}
                                 />
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className='password-toggle-btn'
                                     onClick={() => setMostrarSenha(!mostrarSenha)}
                                     title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
@@ -151,17 +151,17 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>Telefone</label>
-                            <input 
-                                type="text" 
-                                value={telefone} 
-                                onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                            <input
+                                type="text"
+                                value={telefone}
+                                onChange={e => setTelefone(formatarTelefone(e.target.value))}
                                 maxLength={15}
                                 placeholder="(00) 00000-0000"
                             />
                         </div>
                         <div className='form-campo'>
                             <label>Tipo</label>
-                            <select value={tipo} onChange={e => setTipo(e.target.value as any)}>
+                            <select value={tipo} onChange={e => setTipo(e.target.value as 'Médico' | 'Administrador')}>
                                 <option value="Médico">Médico</option>
                                 <option value="Administrador">Administrador</option>
                             </select>
@@ -188,7 +188,6 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                     ))}
                                 </select>
                             </div>
-
                         </div>
                     )}
                 </div>
@@ -204,4 +203,5 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
         </div>
     )
 }
+
 export default ModalCadastrarMedico
