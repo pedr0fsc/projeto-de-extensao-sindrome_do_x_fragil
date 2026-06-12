@@ -1,62 +1,71 @@
-import { useState } from 'react'
-import '../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css'
+import { useState, useEffect } from 'react'
+import './modal-cadastrar-medico-estilos.css'
 import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
-    usuario: {
-        id: number
-        nome: string
-        email: string
-        cpf: string
-        telefone: string
-        tipo: string
-        crm?: string
-    }
     onFechar: () => void
-    onSucesso: () => void
 }
 
-export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
-    const [nome, setNome] = useState(usuario.nome)
-    const [email, setEmail] = useState(usuario.email)
-    const [cpf, setCpf] = useState(formatarCPF(usuario.cpf))
+interface Instituicao {
+    id: number
+    nome_fantasia: string
+}
+
+export function ModalCadastrarMedico({ onFechar }: Props) {
+    const [nome, setNome] = useState('')
+    const [email, setEmail] = useState('')
+    const [cpf, setCpf] = useState('')
     const [senha, setSenha] = useState('')
     const [mostrarSenha, setMostrarSenha] = useState(false)
-    const [telefone, setTelefone] = useState(formatarTelefone(usuario.telefone))
-    const [crm, setCrm] = useState(usuario.crm || '')
-    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as 'Médico' | 'Administrador')
+    const [telefone, setTelefone] = useState('')
+    const [crm, setCrm] = useState('')
+    const [idInstituto, setIdInstituto] = useState<number | null>(null)
+    const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
+    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>('Médico')
     const [loading, setLoading] = useState(false)
     const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
-    const erroEmail = !validarEmail(email)
+    useEffect(() => {
+        fetch('/api/instituicoes')
+            .then(res => res.json())
+            .then(data => setInstituicoes(data || []))
+            .catch(err => console.error('Erro ao carregar instituições:', err))
+    }, [])
 
-    const handleSalvar = async () => {
+    const erros = {
+        nome: !nome.trim(),
+        email: !validarEmail(email),
+        cpf: limparFormatacao(cpf).length !== 11,
+        senha: !senha,
+    }
+
+    const handleConcluir = async () => {
         setTentouSubmit(true)
-        if (erroEmail) return
+        if (Object.values(erros).some(Boolean)) return
         setLoading(true)
         try {
-            const response = await fetch(`/api/usuario/${usuario.id}`, {
-                method: 'PUT',
+            const response = await fetch('/api/usuario', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     nome,
                     email,
                     cpf: limparFormatacao(cpf),
-                    senha: senha || undefined,
+                    senha,
                     telefone: limparFormatacao(telefone),
                     tipo,
-                    crm: tipo === 'Médico' ? crm : undefined
+                    crm: tipo === 'Médico' ? crm : undefined,
+                    id_instituto: idInstituto || undefined
                 })
             })
             const data = await response.json()
             if (data.success) {
-                mostrarAlerta('Usuário atualizado com sucesso!', 'sucesso')
-                onSucesso()
+                mostrarAlerta('Usuário cadastrado com sucesso!', 'sucesso')
                 onFechar()
             } else {
-                mostrarAlerta('Erro ao atualizar: ' + (data.detail || 'Erro desconhecido'), 'erro')
+                mostrarAlerta('Erro ao cadastrar: ' + (data.detail || 'Erro desconhecido'), 'erro')
             }
         } catch (err) {
             console.error(err)
@@ -71,42 +80,52 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
             <div className='modal' onClick={(e) => e.stopPropagation()}>
 
                 <div className='modal-header'>
-                    <h2>Editar {tipo}:</h2>
+                    <h2>Adicionar {tipo}:</h2>
                     <button className='botao-fechar' onClick={onFechar}>✕</button>
                 </div>
 
                 <div className='modal-corpo'>
                     <div className='form-campo'>
-                        <label>Nome completo</label>
-                        <input type="text" value={nome} onChange={e => setNome(e.target.value)} />
+                        <label>Nome completo *</label>
+                        <input
+                            type="text"
+                            value={nome}
+                            onChange={e => setNome(e.target.value)}
+                            className={tentouSubmit && erros.nome ? 'input-erro' : ''}
+                        />
+                        {tentouSubmit && erros.nome && <p className='campo-erro-msg'>Nome é obrigatório</p>}
                     </div>
                     <div className='form-campo'>
-                        <label>E-mail</label>
+                        <label>E-mail *</label>
                         <input
                             type="email"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            className={tentouSubmit && erroEmail ? 'input-erro' : ''}
+                            className={tentouSubmit && erros.email ? 'input-erro' : ''}
                         />
-                        {tentouSubmit && erroEmail && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
+                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
-                            <label>CPF</label>
+                            <label>CPF *</label>
                             <input
                                 type="text"
                                 value={cpf}
                                 onChange={e => setCpf(formatarCPF(e.target.value))}
                                 maxLength={14}
+                                placeholder="000.000.000-00"
+                                className={tentouSubmit && erros.cpf ? 'input-erro' : ''}
                             />
+                            {tentouSubmit && erros.cpf && <p className='campo-erro-msg'>CPF inválido</p>}
                         </div>
                         <div className='form-campo'>
-                            <label>Nova Senha (deixe vazio para não alterar)</label>
+                            <label>Senha *</label>
                             <div className='password-input-wrapper'>
                                 <input
                                     type={mostrarSenha ? 'text' : 'password'}
                                     value={senha}
                                     onChange={e => setSenha(e.target.value)}
+                                    className={tentouSubmit && erros.senha ? 'input-erro' : ''}
                                 />
                                 <button
                                     type="button"
@@ -126,6 +145,7 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                                     )}
                                 </button>
                             </div>
+                            {tentouSubmit && erros.senha && <p className='campo-erro-msg'>Senha é obrigatória</p>}
                         </div>
                     </div>
                     <div className='form-linha'>
@@ -136,6 +156,7 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                                 value={telefone}
                                 onChange={e => setTelefone(formatarTelefone(e.target.value))}
                                 maxLength={15}
+                                placeholder="(00) 00000-0000"
                             />
                         </div>
                         <div className='form-campo'>
@@ -147,22 +168,33 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                         </div>
                     </div>
                     {tipo === 'Médico' && (
-                        <div className='form-campo'>
-                            <label>CRM</label>
-                            <input
-                                type="text"
-                                value={crm}
-                                onChange={e => setCrm(formatarCRM(e.target.value))}
-                                maxLength={9}
-                                placeholder="000000/SP"
-                            />
+                        <div className='form-linha'>
+                            <div className='form-campo'>
+                                <label>CRM</label>
+                                <input
+                                    type="text"
+                                    value={crm}
+                                    onChange={e => setCrm(formatarCRM(e.target.value))}
+                                    maxLength={9}
+                                    placeholder="000000/SP"
+                                />
+                            </div>
+                            <div className='form-campo'>
+                                <label>Instituição</label>
+                                <select value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
+                                    <option value="">Selecione uma instituição</option>
+                                    {instituicoes.map(inst => (
+                                        <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     )}
                 </div>
 
                 <div className='modal-rodape'>
-                    <button className='botao-concluir' onClick={handleSalvar} disabled={loading}>
-                        {loading ? 'Salvando...' : 'Salvar Alterações'}
+                    <button className='botao-concluir' onClick={handleConcluir} disabled={loading}>
+                        {loading ? 'Salvando...' : 'Concluir'}
                     </button>
                     <button className='botao-cancelar' onClick={onFechar}>Cancelar</button>
                 </div>
@@ -172,4 +204,4 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     )
 }
 
-export default ModalEditarUsuario
+export default ModalCadastrarMedico

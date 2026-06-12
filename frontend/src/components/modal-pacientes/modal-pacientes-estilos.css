@@ -380,6 +380,9 @@
     cursor: pointer;
     overflow: hidden;
     padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: border-color 0.2s, background-color 0.2s;
 }
 

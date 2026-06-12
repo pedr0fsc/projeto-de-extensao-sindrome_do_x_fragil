@@ -12,6 +12,7 @@ interface Props {
         data_nascimento: string
         telefone: string
         email: string
+        id_instituto: number | null
     }
     onFechar: () => void
     onSucesso: () => void
@@ -28,6 +29,14 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     const { mostrarAlerta } = useAlerta()
 
     const handleSalvar = async () => {
+        if (!nome.trim() || !cpf.trim() || !genero || !dataNascimento) {
+            mostrarAlerta('Por favor, preencha todos os campos obrigatórios (*).', 'erro')
+            return
+        }
+        if (email.trim() && !email.includes('@')) {
+            mostrarAlerta('O e-mail informado é inválido (deve conter @).', 'erro')
+            return
+        }
         setLoading(true)
         try {
             const response = await fetch(`/api/paciente/${paciente.id}`, {
@@ -69,7 +78,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                 <div className='ms-corpo'>
                     <div className='ms-secao'>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Nome completo</label>
+                            <label className='ms-label'>Nome completo *</label>
                             <input 
                                 className='ms-input' 
                                 type="text" 
@@ -80,7 +89,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                         </div>
                         <div className='ms-linha-dupla'>
                             <div className='ms-campo'>
-                                <label className='ms-label'>CPF</label>
+                                <label className='ms-label'>CPF *</label>
                                 <input 
                                     className='ms-input' 
                                     type="text" 
@@ -90,7 +99,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                                 />
                             </div>
                             <div className='ms-campo'>
-                                <label className='ms-label'>Data de nascimento</label>
+                                <label className='ms-label'>Data de nascimento *</label>
                                 <input
                                     className='ms-input'
                                     type="date"
@@ -102,7 +111,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                             </div>
                         </div>
                         <div className='ms-campo-full'>
-                            <label className='ms-label'>Sexo Biológico</label>
+                            <label className='ms-label'>Sexo Biológico *</label>
                             <div className='ms-radio-grupo'>
                                 {['Masculino', 'Feminino'].map(g => (
                                     <button

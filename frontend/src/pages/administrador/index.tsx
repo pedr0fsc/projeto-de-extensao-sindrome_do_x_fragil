@@ -1,722 +1,820 @@
-import './administrador-estilos.css'
-import { useState, useEffect, useMemo } from 'react'
-import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
-import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
-import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
-import { ModalCadastrarInstituicao } from '../../componentes/modal-cadastrar-instituicao'
-import { ModalEditarInstituicao } from '../../componentes/modal-editar-instituicao'
-import { ModalFotosPaciente } from '../../componentes/modal-fotos-paciente'
-import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
-import dashboardImg from '../../assets/dashboard.png'
-import medicoImg from '../../assets/medico.png'
-import pacienteImg from '../../assets/paciente.png'
-import administradorImg from '../../assets/administrador.png'
-import pincelImg from '../../assets/pincel.png'
-import logoImg from '../../assets/logo.png'
-import { formatarCPF } from '../../utils/mascaras'
-import { SearchBar } from '../../componentes/search-bar'
-import { Footer } from '../../componentes/footer'
+import "./administrador-estilos.css";
+import { useState, useEffect, useMemo } from "react";
+import { ModalCadastrarMedico } from "../../components/modal-cadastrar-medico";
+import { ModalEditarUsuario } from "../../components/modal-editar-usuario";
+import { ModalEditarPaciente } from "../../components/modal-editar-paciente";
+import { ModalCadastrarInstituicao } from "../../components/modal-cadastrar-instituicao";
+import { ModalEditarInstituicao } from "../../components/modal-editar-instituicao";
+import { ModalFotosPaciente } from "../../components/modal-fotos-paciente";
+import { useTransitionNavigate } from "../../hooks/useTransitionNavigate";
+import dashboardImg from "../../assets/dashboard.png";
+import medicoImg from "../../assets/medico.png";
+import pacienteImg from "../../assets/paciente.png";
+import administradorImg from "../../assets/administrador.png";
+import logoImg from "../../assets/logo.png";
+import pincelImg from "../../assets/pincel.png";
+import { formatarCNPJ, formatarCPF } from "../../utils/mascaras";
+import { SearchBar } from "../../components/search-bar";
+import { Footer } from "../../components/footer";
 
-type Visao = 'dashboard' | 'medicos' | 'pacientes' | 'instituicoes'
-type SortOrder = 'asc' | 'desc'
-type SortMedicosField = 'nome' | 'crm'
-type SortPacientesField = 'nome' | 'idade' | 'sexo' | 'nascimento'
+type Visao = "dashboard" | "medicos" | "pacientes" | "instituicoes";
+type SortOrder = "asc" | "desc";
+type SortMedicosField = "nome" | "crm";
+type SortPacientesField = "nome" | "idade" | "sexo" | "nascimento";
 
 interface Medico {
-    id: number
-    nome: string
-    crm: string
-    email: string
-    cpf: string
-    telefone: string
-    tipo: string
-    ativo: boolean
-    id_instituto: number | null
-    instituicao: string | null
+  id: number;
+  nome: string;
+  crm: string;
+  email: string;
+  cpf: string;
+  telefone: string;
+  tipo: string;
+  ativo: boolean;
+  id_instituto: number | null;
+  instituicao: string | null;
 }
 
 interface Paciente {
-    id: number
-    nome: string
-    cpf: string
-    sexo: string
-    data_nascimento: string
-    telefone: string
-    email: string
-    foto_face?: string | null
-    foto_perfil_esq?: string | null
-    foto_perfil_dir?: string | null
+  id: number;
+  nome: string;
+  cpf: string;
+  sexo: string;
+  data_nascimento: string;
+  telefone: string;
+  email: string;
+  id_instituto: number | null;
+  instituicao?: string | null;
+  foto_face?: string | null;
+  foto_perfil_esq?: string | null;
+  foto_perfil_dir?: string | null;
 }
 
 interface Instituicao {
-    id: number
-    nome_fantasia: string
-    nome: string
-    cnpj: string
-    cep: string
-    rua: string
-    numero: string
-    complemento: string
-    bairro: string
-    cidade: string
-    estado: string
+  id: number;
+  nome_fantasia: string;
+  nome: string;
+  cnpj: string;
+  cep: string;
+  rua: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
 }
 
 interface Relatorio {
-    paciente: string
-    sexo: string
-    data: string
-    score: number
-    recomendacao: string
-    medico: string
-    atingiu_limiar: boolean
+  paciente: string;
+  sexo: string;
+  data: string;
+  score: number;
+  recomendacao: string;
+  medico: string;
+  atingiu_limiar: boolean;
 }
 
 function calcularIdade(dataNascimento: string): number {
-    const hoje = new Date()
-    const nascimento = new Date(dataNascimento)
-    let idade = hoje.getFullYear() - nascimento.getFullYear()
-    const m = hoje.getMonth() - nascimento.getMonth()
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-        idade--
-    }
-    return idade
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const m = hoje.getMonth() - nascimento.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  return idade;
 }
 
 interface SortChipsProps<T extends string> {
-    chips: { label: string; value: T }[]
-    active: T
-    order: SortOrder
-    onSort: (field: T) => void
+  chips: { label: string; value: T }[];
+  active: T;
+  order: SortOrder;
+  onSort: (field: T) => void;
 }
 
-function SortChips<T extends string>({ chips, active, order, onSort }: SortChipsProps<T>) {
-    return (
-        <div className='admin-filtros'>
-            {chips.map(chip => (
-                <button
-                    key={chip.value}
-                    className={`filtro-chip ${active === chip.value ? 'filtro-chip-ativo' : ''}`}
-                    onClick={() => onSort(chip.value)}
-                >
-                    {chip.label}
-                    {active === chip.value && (
-                        <span className='filtro-chip-seta'>{order === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                </button>
-            ))}
-        </div>
-    )
+function SortChips<T extends string>({
+  chips,
+  active,
+  order,
+  onSort,
+}: SortChipsProps<T>) {
+  return (
+    <div className="admin-filtros">
+      {chips.map((chip) => (
+        <button
+          key={chip.value}
+          className={`filtro-chip ${active === chip.value ? "filtro-chip-ativo" : ""}`}
+          onClick={() => onSort(chip.value)}
+        >
+          {chip.label}
+          {active === chip.value && (
+            <span className="filtro-chip-seta">
+              {order === "asc" ? "↑" : "↓"}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function PaginaAdministrador() {
-    const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
-    const [modalInstituicaoAberto, setModalInstituicaoAberto] = useState(false)
-    const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null)
-    const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
-    const [pacienteFotosVisualizar, setPacienteFotosVisualizar] = useState<Paciente | null>(null)
-    const [instituicaoParaEditar, setInstituicaoParaEditar] = useState<Instituicao | null>(null)
-    const [visao, setVisao] = useState<Visao>('dashboard')
-    const [medicos, setMedicos] = useState<Medico[]>([])
-    const [pacientes, setPacientes] = useState<Paciente[]>([])
-    const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
-    const [relatorios, setRelatorios] = useState<Relatorio[]>([])
-    const [stats, setStats] = useState({ totalMedicos: 0, totalPacientes: 0, totalTriagens: 0, encaminhados: 0 })
-    const [loading, setLoading] = useState(true)
-    const navigate = useTransitionNavigate()
+  const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false);
+  const [modalInstituicaoAberto, setModalInstituicaoAberto] = useState(false);
+  const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null);
+  const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null);
+  const [pacienteFotosVisualizar, setPacienteFotosVisualizar] = useState<Paciente | null>(null);
+  const [instituicaoParaEditar, setInstituicaoParaEditar] = useState<Instituicao | null>(null);
+  const [visao, setVisao] = useState<Visao>("dashboard");
+  const [medicos, setMedicos] = useState<Medico[]>([]);
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
+  const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
+  const [stats, setStats] = useState({
+    totalMedicos: 0,
+    totalPacientes: 0,
+    totalTriagens: 0,
+    encaminhados: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const navigate = useTransitionNavigate();
 
-    const [searchDashboard, setSearchDashboard] = useState('')
-    const [searchMedicos, setSearchMedicos] = useState('')
-    const [searchPacientes, setSearchPacientes] = useState('')
-    const [searchInstituicoes, setSearchInstituicoes] = useState('')
+  const [searchDashboard, setSearchDashboard] = useState("");
+  const [searchMedicos, setSearchMedicos] = useState("");
+  const [searchPacientes, setSearchPacientes] = useState("");
+  const [searchInstituicoes, setSearchInstituicoes] = useState("");
 
-    const activeSearch =
-        visao === 'dashboard' ? searchDashboard :
-        visao === 'medicos' ? searchMedicos :
-        visao === 'instituicoes' ? searchInstituicoes :
-        searchPacientes
+  const activeSearch =
+    visao === "dashboard"
+      ? searchDashboard
+      : visao === "medicos"
+        ? searchMedicos
+        : visao === "instituicoes"
+          ? searchInstituicoes
+          : searchPacientes;
 
-    const setActiveSearch = (val: string) => {
-        if (visao === 'dashboard') setSearchDashboard(val)
-        else if (visao === 'medicos') setSearchMedicos(val)
-        else if (visao === 'instituicoes') setSearchInstituicoes(val)
-        else setSearchPacientes(val)
+  const setActiveSearch = (val: string) => {
+    if (visao === "dashboard") setSearchDashboard(val);
+    else if (visao === "medicos") setSearchMedicos(val);
+    else if (visao === "instituicoes") setSearchInstituicoes(val);
+    else setSearchPacientes(val);
+  };
+
+  const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>("nome");
+  const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>("asc");
+  const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>("nome");
+  const [sortPacientesOrder, setSortPacientesOrder] = useState<SortOrder>("asc");
+
+  const handleSortMedicos = (field: SortMedicosField) => {
+    if (sortMedicosField === field)
+      setSortMedicosOrder((o) => (o === "asc" ? "desc" : "asc"));
+    else {
+      setSortMedicosField(field);
+      setSortMedicosOrder("asc");
     }
+  };
 
-    const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>('nome')
-    const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>('asc')
-    const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>('nome')
-    const [sortPacientesOrder, setSortPacientesOrder] = useState<SortOrder>('asc')
-
-    const handleSortMedicos = (field: SortMedicosField) => {
-        if (sortMedicosField === field) setSortMedicosOrder(o => (o === 'asc' ? 'desc' : 'asc'))
-        else { setSortMedicosField(field); setSortMedicosOrder('asc') }
+  const handleSortPacientes = (field: SortPacientesField) => {
+    if (sortPacientesField === field)
+      setSortPacientesOrder((o) => (o === "asc" ? "desc" : "asc"));
+    else {
+      setSortPacientesField(field);
+      setSortPacientesOrder("asc");
     }
+  };
 
-    const handleSortPacientes = (field: SortPacientesField) => {
-        if (sortPacientesField === field) setSortPacientesOrder(o => (o === 'asc' ? 'desc' : 'asc'))
-        else { setSortPacientesField(field); setSortPacientesOrder('asc') }
+  const alternarStatusMedico = async (medico: Medico) => {
+    try {
+      const response = await fetch(`/api/usuario/${medico.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ativo: !medico.ativo }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        alert("Não foi possível alterar o status do médico.");
+        return;
+      }
+      await fetchData();
+    } catch (err) {
+      console.error("Erro ao alterar status do médico:", err);
+      alert("Erro de conexão ao alterar status do médico.");
     }
+  };
 
-    const alternarStatusMedico = async (medico: Medico) => {
-        try {
-            const response = await fetch(`/api/usuario/${medico.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nome: medico.nome,
-                    email: medico.email,
-                    cpf: medico.cpf,
-                    telefone: medico.telefone,
-                    tipo: medico.tipo,
-                    crm: medico.crm,
-                    id_instituto: medico.id_instituto,
-                    ativo: !medico.ativo,
-                }),
-            })
-            const data = await response.json()
-            if (!response.ok || !data.success) {
-                alert('Não foi possível alterar o status do médico.')
-                return
-            }
-            await fetchData()
-        } catch (err) {
-            console.error('Erro ao alterar status do médico:', err)
-            alert('Erro de conexão ao alterar status do médico.')
-        }
-    }
+  const atividadesMedicos = useMemo(() => {
+    const term = searchDashboard.toLowerCase();
+    return medicos
+      .map((m) => {
+        const triagensMedico = relatorios.filter((r) => r.medico === m.nome);
+        return {
+          medico: m.nome,
+          crm: m.crm,
+          ativo: m.ativo,
+          consultas: triagensMedico.length,
+          pacientes: new Set(triagensMedico.map((r) => r.paciente)).size,
+          instituicao: m.instituicao || "-",
+        };
+      })
+      .filter(
+        (a) =>
+          !term ||
+          a.medico.toLowerCase().includes(term) ||
+          a.crm.toLowerCase().includes(term) ||
+          a.consultas.toString().includes(term) ||
+          a.pacientes.toString().includes(term) ||
+          a.instituicao.toLowerCase().includes(term),
+      );
+  }, [medicos, relatorios, searchDashboard]);
 
-    const atividadesMedicos = useMemo(() => {
-        const term = searchDashboard.toLowerCase()
-        return medicos
-            .map(m => {
-                const triagensMedico = relatorios.filter(r => r.medico === m.nome)
-                return {
-                    medico: m.nome,
-                    crm: m.crm,
-                    ativo: m.ativo,
-                    consultas: triagensMedico.length,
-                    pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
-                    instituicao: m.instituicao || '-',
-                }
-            })
-            .filter(a =>
-                !term ||
-                a.medico.toLowerCase().includes(term) ||
-                a.crm.toLowerCase().includes(term) ||
-                a.consultas.toString().includes(term) ||
-                a.pacientes.toString().includes(term) ||
-                a.instituicao.toLowerCase().includes(term)
-            )
-    }, [medicos, relatorios, searchDashboard])
+  const filteredRelatoriosDashboard = useMemo(() => {
+    const term = searchDashboard.toLowerCase();
+    if (!term) return relatorios.slice(0, 5);
+    return relatorios
+      .filter(
+        (r) =>
+          r.paciente.toLowerCase().includes(term) ||
+          r.sexo.toLowerCase().includes(term) ||
+          r.medico.toLowerCase().includes(term) ||
+          r.data.includes(term) ||
+          r.score.toString().includes(term),
+      )
+      .slice(0, 5);
+  }, [relatorios, searchDashboard]);
 
-    const filteredRelatoriosDashboard = useMemo(() => {
-        const term = searchDashboard.toLowerCase()
-        if (!term) return relatorios.slice(0, 5)
-        return relatorios
-            .filter(r =>
-                r.paciente.toLowerCase().includes(term) ||
-                r.sexo.toLowerCase().includes(term) ||
-                r.medico.toLowerCase().includes(term) ||
-                r.data.includes(term) ||
-                r.score.toString().includes(term)
-            )
-            .slice(0, 5)
-    }, [relatorios, searchDashboard])
-
-    const sortedMedicos = useMemo(() => {
-        const term = searchMedicos.toLowerCase()
-        const filtered = term
-            ? medicos.filter(m =>
-                m.nome.toLowerCase().includes(term) ||
-                m.crm.toLowerCase().includes(term) ||
-                m.cpf.includes(term) ||
-                m.email.toLowerCase().includes(term) ||
-                m.telefone.includes(term) ||
-                (m.instituicao || '').toLowerCase().includes(term)
-            )
-            : [...medicos]
-        return filtered.sort((a, b) => {
-            const valA = a[sortMedicosField] || ''
-            const valB = b[sortMedicosField] || ''
-            if (valA < valB) return sortMedicosOrder === 'asc' ? -1 : 1
-            if (valA > valB) return sortMedicosOrder === 'asc' ? 1 : -1
-            return 0
-        })
-    }, [medicos, searchMedicos, sortMedicosField, sortMedicosOrder])
-
-    const sortedPacientes = useMemo(() => {
-        const term = searchPacientes.toLowerCase()
-        const filtered = term
-            ? pacientes.filter(p =>
-                p.nome.toLowerCase().includes(term) ||
-                p.cpf.includes(term) ||
-                formatarCPF(p.cpf).includes(term) ||
-                p.email.toLowerCase().includes(term) ||
-                p.telefone.includes(term) ||
-                p.sexo.toLowerCase().includes(term) ||
-                calcularIdade(p.data_nascimento).toString().includes(term) ||
-                p.data_nascimento.includes(term) ||
-                p.data_nascimento.split('-').reverse().join('/').includes(term)
-            )
-            : [...pacientes]
-        return filtered.sort((a, b) => {
-            let valA: string | number
-            let valB: string | number
-            if (sortPacientesField === 'idade') {
-                valA = calcularIdade(a.data_nascimento)
-                valB = calcularIdade(b.data_nascimento)
-            } else if (sortPacientesField === 'nascimento') {
-                valA = a.data_nascimento
-                valB = b.data_nascimento
-            } else if (sortPacientesField === 'sexo') {
-                valA = a.sexo
-                valB = b.sexo
-            } else {
-                valA = a.nome
-                valB = b.nome
-            }
-            if (valA < valB) return sortPacientesOrder === 'asc' ? -1 : 1
-            if (valA > valB) return sortPacientesOrder === 'asc' ? 1 : -1
-            return 0
-        })
-    }, [pacientes, searchPacientes, sortPacientesField, sortPacientesOrder])
-
-    const filteredInstituicoes = useMemo(() => {
-        const term = searchInstituicoes.toLowerCase()
-        if (!term) return instituicoes
-        return instituicoes.filter(i =>
-            i.nome_fantasia.toLowerCase().includes(term) ||
-            (i.nome || '').toLowerCase().includes(term) ||
-            i.cnpj.includes(term) ||
-            i.cidade.toLowerCase().includes(term) ||
-            i.estado.toLowerCase().includes(term)
+  const sortedMedicos = useMemo(() => {
+    const term = searchMedicos.toLowerCase();
+    const filtered = term
+      ? medicos.filter(
+          (m) =>
+            m.nome.toLowerCase().includes(term) ||
+            m.crm.toLowerCase().includes(term) ||
+            m.cpf.includes(term) ||
+            m.email.toLowerCase().includes(term) ||
+            m.telefone.includes(term) ||
+            (m.instituicao || "").toLowerCase().includes(term),
         )
-    }, [instituicoes, searchInstituicoes])
+      : [...medicos];
 
-    const fetchData = async () => {
-        setLoading(true)
-        try {
-            const [resMedicos, resPacientes, resRelatorios, resCheck, resInstituicoes] = await Promise.all([
-                fetch('/api/medicos'),
-                fetch('/api/pacientes'),
-                fetch('/api/relatorios'),
-                fetch('/api/check'),
-                fetch('/api/instituicao'),
-            ])
+    return filtered.sort((a, b) => {
+      const valA = a[sortMedicosField] || "";
+      const valB = b[sortMedicosField] || "";
+      if (valA < valB) return sortMedicosOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortMedicosOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [medicos, searchMedicos, sortMedicosField, sortMedicosOrder]);
 
-            if (resCheck.ok) {
-                const checkData = await resCheck.json()
-                if (!checkData.logged_in) {
-                    navigate('/login-medicos')
-                    return
-                }
-            } else {
-                navigate('/login-medicos')
-                return
-            }
-
-            const dataMedicos = await resMedicos.json()
-            const dataPacientes = await resPacientes.json()
-            const dataRelatorios = await resRelatorios.json()
-            const dataInstituicoes = await resInstituicoes.json()
-
-            setMedicos(dataMedicos || [])
-            setPacientes(dataPacientes || [])
-            setInstituicoes(dataInstituicoes || [])
-            setRelatorios(dataRelatorios.relatorios || [])
-            setStats({
-                totalMedicos: dataMedicos.length || 0,
-                totalPacientes: dataPacientes.length || 0,
-                totalTriagens: dataRelatorios.total || 0,
-                encaminhados: dataRelatorios.encaminhados || 0,
-            })
-        } catch (err) {
-            console.error('Erro ao carregar dados admin:', err)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => { fetchData() }, [])
-
-    if (loading)
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                Carregando Painel Admin...
-            </div>
+  const sortedPacientes = useMemo(() => {
+    const term = searchPacientes.toLowerCase();
+    const filtered = term
+      ? pacientes.filter(
+          (p) =>
+            p.nome.toLowerCase().includes(term) ||
+            p.cpf.includes(term) ||
+            formatarCPF(p.cpf).includes(term) ||
+            p.email.toLowerCase().includes(term) ||
+            p.telefone.includes(term) ||
+            p.sexo.toLowerCase().includes(term) ||
+            calcularIdade(p.data_nascimento).toString().includes(term) ||
+            p.data_nascimento.includes(term) ||
+            p.data_nascimento.split("-").reverse().join("/").includes(term),
         )
+      : [...pacientes];
 
-    const medicosSortChips: { label: string; value: SortMedicosField }[] = [
-        { label: 'Nome', value: 'nome' },
-        { label: 'CRM', value: 'crm' },
-    ]
+    return filtered.sort((a, b) => {
+      let valA: string | number;
+      let valB: string | number;
 
-    const pacientesSortChips: { label: string; value: SortPacientesField }[] = [
-        { label: 'Nome', value: 'nome' },
-        { label: 'Idade', value: 'idade' },
-        { label: 'Sexo', value: 'sexo' },
-        { label: 'Data de Nascimento', value: 'nascimento' },
-    ]
+      if (sortPacientesField === "idade") {
+        valA = calcularIdade(a.data_nascimento);
+        valB = calcularIdade(b.data_nascimento);
+      } else if (sortPacientesField === "nascimento") {
+        valA = a.data_nascimento;
+        valB = b.data_nascimento;
+      } else if (sortPacientesField === "sexo") {
+        valA = a.sexo;
+        valB = b.sexo;
+      } else {
+        valA = a.nome;
+        valB = b.nome;
+      }
 
+      if (valA < valB) return sortPacientesOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortPacientesOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [pacientes, searchPacientes, sortPacientesField, sortPacientesOrder]);
+
+  const filteredInstituicoes = useMemo(() => {
+    const term = searchInstituicoes.toLowerCase();
+    if (!term) return instituicoes;
+    return instituicoes.filter(
+      (i) =>
+        i.nome_fantasia.toLowerCase().includes(term) ||
+        (i.nome || "").toLowerCase().includes(term) ||
+        i.cnpj.includes(term) ||
+        i.cidade.toLowerCase().includes(term) ||
+        i.estado.toLowerCase().includes(term),
+    );
+  }, [instituicoes, searchInstituicoes]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [
+        resMedicos,
+        resPacientes,
+        resRelatorios,
+        resCheck,
+        resInstituicoes,
+      ] = await Promise.all([
+        fetch("/api/medicos"),
+        fetch("/api/pacientes"),
+        fetch("/api/relatorios"),
+        fetch("/api/check"),
+        fetch("/api/instituicoes"),
+      ]);
+
+      if (resCheck.ok) {
+        const checkData = await resCheck.json();
+        if (!checkData.logged_in) {
+          navigate("/login-medicos");
+          return;
+        }
+      } else {
+        navigate("/login-medicos");
+        return;
+      }
+
+      const dataMedicos = await resMedicos.json();
+      const dataPacientes = await resPacientes.json();
+      const dataRelatorios = await resRelatorios.json();
+      const dataInstituicoes = await resInstituicoes.json();
+
+      setMedicos(dataMedicos || []);
+      setPacientes(dataPacientes || []);
+      setInstituicoes(dataInstituicoes || []);
+      setRelatorios(dataRelatorios.relatorios || []);
+      setStats({
+        totalMedicos: dataMedicos.length || 0,
+        totalPacientes: dataPacientes.length || 0,
+        totalTriagens: dataRelatorios.total || 0,
+        encaminhados: dataRelatorios.encaminhados || 0,
+      });
+    } catch (err) {
+      console.error("Erro ao carregar dados admin:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  if (loading)
     return (
-        <div className='admin-layout'>
-            {/* ── Sidebar ── */}
-            <aside className='admin-sidebar'>
-                <div className='sidebar-logo'>
-                    <img src={logoImg} alt="SXF Admin" />
-                </div>
-                <nav className='sidebar-nav'>
-                    <button
-                        className={`sidebar-item ${visao === 'dashboard' ? 'sidebar-item-ativo' : ''}`}
-                        onClick={() => setVisao('dashboard')}
-                    >
-                        <img src={dashboardImg} alt="" />
-                        Dashboard
-                    </button>
-                    <button
-                        className={`sidebar-item ${visao === 'medicos' ? 'sidebar-item-ativo' : ''}`}
-                        onClick={() => setVisao('medicos')}
-                    >
-                        <img src={medicoImg} alt="" />
-                        Médicos
-                    </button>
-                    <button
-                        className={`sidebar-item ${visao === 'pacientes' ? 'sidebar-item-ativo' : ''}`}
-                        onClick={() => setVisao('pacientes')}
-                    >
-                        <img src={pacienteImg} alt="" />
-                        Pacientes
-                    </button>
-                    <button
-                        className={`sidebar-item ${visao === 'instituicoes' ? 'sidebar-item-ativo' : ''}`}
-                        onClick={() => setVisao('instituicoes')}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 26, height: 26, opacity: 0.7 }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-                        </svg>
-                        Instituições
-                    </button>
-                </nav>
-            </aside>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        Carregando Painel Admin...
+      </div>
+    );
 
-            {/* ── Main ── */}
-            <div className='admin-main'>
-                <header className='admin-topbar'>
-                    <SearchBar value={activeSearch} onChange={setActiveSearch} />
-                    <label className='admin-perfil'>
-                        <img src={administradorImg} alt="" />
-                        Administrador
-                    </label>
-                </header>
+  const medicosSortChips: { label: string; value: SortMedicosField }[] = [
+    { label: "Nome", value: "nome" },
+    { label: "CRM", value: "crm" },
+  ];
 
-                <div className='admin-conteudo'>
-                    {/* ── Dashboard view ── */}
-                    {visao === 'dashboard' && (
-                        <>
-                            <h2 className='dashboard-titulo'>Dashboard do Administrador</h2>
+  const pacientesSortChips: { label: string; value: SortPacientesField }[] = [
+    { label: "Nome", value: "nome" },
+    { label: "Idade", value: "idade" },
+    { label: "Sexo", value: "sexo" },
+    { label: "Data de Nascimento", value: "nascimento" },
+  ];
 
-                            <div className='dashboard-cards'>
-                                <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Total de Médicos</span>
-                                    <span className='dashboard-card-valor'>{stats.totalMedicos}</span>
-                                    <span className='dashboard-card-sub'>Cadastrados no sistema</span>
-                                </div>
-                                <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Total de Pacientes</span>
-                                    <span className='dashboard-card-valor'>{stats.totalPacientes}</span>
-                                    <span className='dashboard-card-sub'>Cadastrados</span>
-                                </div>
-                                <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Total de Triagens</span>
-                                    <span className='dashboard-card-valor'>{stats.totalTriagens}</span>
-                                    <span className='dashboard-card-sub'>Realizadas no total</span>
-                                </div>
-                                <div className='dashboard-card dashboard-card-destaque'>
-                                    <span className='dashboard-card-titulo'>Encaminhados</span>
-                                    <span className='dashboard-card-valor'>{stats.encaminhados}</span>
-                                    <span className='dashboard-card-sub'>Para teste genético</span>
-                                </div>
-                            </div>
-
-                            <div className='admin-tabela-container'>
-                                <h3 className='dashboard-secao-titulo'>Atividade por Médico</h3>
-                                <table className='admin-tabela'>
-                                    <thead>
-                                        <tr>
-                                            <th>Médico</th>
-                                            <th>CRM</th>
-                                            <th>Triagens Realizadas</th>
-                                            <th>Pacientes Atendidos</th>
-                                            <th>Status</th>
-                                            <th>Instituição</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {atividadesMedicos.map((a, i) => (
-                                            <tr key={i}>
-                                                <td>{a.medico}</td>
-                                                <td>{a.crm}</td>
-                                                <td>{a.consultas}</td>
-                                                <td>{a.pacientes}</td>
-                                                <td>
-                                                    <span className={`status-badge ${a.ativo ? 'status-ativo' : 'status-inativo'}`}>
-                                                        {a.ativo ? 'Ativo' : 'Inativo'}
-                                                    </span>
-                                                </td>
-                                                <td>{a.instituicao}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div className='admin-tabela-container'>
-                                <h3 className='dashboard-secao-titulo'>Últimas Triagens Realizadas</h3>
-                                <table className='admin-tabela'>
-                                    <thead>
-                                        <tr>
-                                            <th>Paciente</th>
-                                            <th>Sexo</th>
-                                            <th>Médico</th>
-                                            <th>Data</th>
-                                            <th>Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredRelatoriosDashboard.map((r, i) => (
-                                            <tr key={i}>
-                                                <td>{r.paciente}</td>
-                                                <td>{r.sexo}</td>
-                                                <td>{r.medico}</td>
-                                                <td>{r.data}</td>
-                                                <td>{r.score.toFixed(3)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
-                    )}
-
-                    {/* ── Médicos view ── */}
-                    {visao === 'medicos' && (
-                        <div className='admin-secao'>
-                            <div className='admin-filtros-header'>
-                                <h2>Filtros:</h2>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir btn-inserir-secundario'>
-                                        + Instituição
-                                    </button>
-                                    <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
-                                        + Inserir usuário
-                                    </button>
-                                </div>
-                            </div>
-
-                            <SortChips
-                                chips={medicosSortChips}
-                                active={sortMedicosField}
-                                order={sortMedicosOrder}
-                                onSort={handleSortMedicos}
-                            />
-
-                            <div className='admin-tabela-container'>
-                                <h3>Lista de usuários:</h3>
-                                <table className='admin-tabela'>
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Tipo</th>
-                                            <th>CRM (se médico)</th>
-                                            <th>Instituição</th>
-                                            <th>Status</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sortedMedicos.map((m, i) => (
-                                            <tr key={i}>
-                                                <td>{m.nome}</td>
-                                                <td>{m.tipo}</td>
-                                                <td>{m.crm || '-'}</td>
-                                                <td>{m.instituicao || '-'}</td>
-                                                <td>
-                                                    <label className='admin-switch'>
-                                                        <input
-                                                            type='checkbox'
-                                                            checked={m.ativo}
-                                                            onChange={() => alternarStatusMedico(m)}
-                                                        />
-                                                        <span>{m.ativo ? 'Ativo' : 'Inativo'}</span>
-                                                    </label>
-                                                </td>
-                                                <td>
-                                                    <div className='acoes-celula'>
-                                                        <button className='btn-acao' onClick={() => setMedicoParaEditar(m)}>
-                                                            <img src={pincelImg} alt="Editar" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Pacientes view ── */}
-                    {visao === 'pacientes' && (
-                        <div className='admin-secao'>
-                            <div className='admin-filtros-header'>
-                                <h2>Filtros:</h2>
-                            </div>
-
-                            <SortChips
-                                chips={pacientesSortChips}
-                                active={sortPacientesField}
-                                order={sortPacientesOrder}
-                                onSort={handleSortPacientes}
-                            />
-
-                            <div className='admin-tabela-container'>
-                                <h3>Lista de pacientes:</h3>
-                                <table className='admin-tabela'>
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Idade</th>
-                                            <th>Sexo Biológico</th>
-                                            <th>Nascimento</th>
-                                            <th>CPF</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sortedPacientes.map((p, i) => (
-                                            <tr key={i}>
-                                                <td>{p.nome}</td>
-                                                <td>{calcularIdade(p.data_nascimento)} anos</td>
-                                                <td>{p.sexo}</td>
-                                                <td>{p.data_nascimento.split('-').reverse().join('/')}</td>
-                                                <td>{formatarCPF(p.cpf)}</td>
-                                                <td>
-                                                    <div className='acoes-celula'>
-                                                        <button className='btn-acao' onClick={() => setPacienteParaEditar(p)} title="Editar paciente">
-                                                            <img src={pincelImg} alt="Editar" />
-                                                        </button>
-                                                        <button className='btn-acao btn-acao-fotos' onClick={() => setPacienteFotosVisualizar(p)} title="Ver fotos">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Instituições view ── */}
-                    {visao === 'instituicoes' && (
-                        <div className='admin-secao'>
-                            <div className='admin-filtros-header'>
-                                <h2>Instituições:</h2>
-                                <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir'>
-                                    + Instituição
-                                </button>
-                            </div>
-
-                            <div className='admin-tabela-container'>
-                                <h3>Lista de instituições:</h3>
-                                <table className='admin-tabela'>
-                                    <thead>
-                                        <tr>
-                                            <th>Nome Fantasia</th>
-                                            <th>Razão Social</th>
-                                            <th>CNPJ</th>
-                                            <th>Cidade / UF</th>
-                                            <th>Endereço</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredInstituicoes.map((inst, i) => (
-                                            <tr key={i}>
-                                                <td>{inst.nome_fantasia}</td>
-                                                <td>{inst.nome || '-'}</td>
-                                                <td>{inst.cnpj}</td>
-                                                <td>{inst.cidade} / {inst.estado}</td>
-                                                <td>{inst.rua}, {inst.numero}{inst.complemento ? `, ${inst.complemento}` : ''} — {inst.bairro}</td>
-                                                <td>
-                                                    <div className='acoes-celula'>
-                                                        <button className='btn-acao' onClick={() => setInstituicaoParaEditar(inst)} title="Editar instituição">
-                                                            <img src={pincelImg} alt="Editar" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                </div>
-                <Footer />
-            </div>
-
-            {/* ── Modals ── */}
-            {modalCadastrarAberto && (
-                <ModalCadastrarMedico
-                    onFechar={() => {
-                        setModalCadastrarAberto(false)
-                        fetchData()
-                    }}
-                />
-            )}
-            {modalInstituicaoAberto && (
-                <ModalCadastrarInstituicao
-                    onFechar={() => {
-                        setModalInstituicaoAberto(false)
-                        fetchData()
-                    }}
-                />
-            )}
-            {medicoParaEditar && (
-                <ModalEditarUsuario
-                    usuario={medicoParaEditar}
-                    onFechar={() => setMedicoParaEditar(null)}
-                    onSucesso={fetchData}
-                />
-            )}
-            {pacienteParaEditar && (
-                <ModalEditarPaciente
-                    paciente={pacienteParaEditar}
-                    onFechar={() => setPacienteParaEditar(null)}
-                    onSucesso={fetchData}
-                />
-            )}
-            {pacienteFotosVisualizar && (
-                <ModalFotosPaciente
-                    paciente={pacienteFotosVisualizar}
-                    onFechar={() => setPacienteFotosVisualizar(null)}
-                />
-            )}
-            {instituicaoParaEditar && (
-                <ModalEditarInstituicao
-                    instituicao={instituicaoParaEditar}
-                    onFechar={() => setInstituicaoParaEditar(null)}
-                    onSucesso={fetchData}
-                />
-            )}
+  return (
+    <div className="admin-layout">
+      {/* ── Sidebar ── */}
+      <aside className="admin-sidebar">
+        <div className="sidebar-logo">
+          <img src={logoImg} alt="SXF Admin" />
         </div>
-    )
+        <nav className="sidebar-nav">
+          <button
+            className={`sidebar-item ${visao === "dashboard" ? "sidebar-item-ativo" : ""}`}
+            onClick={() => setVisao("dashboard")}
+          >
+            <img src={dashboardImg} alt="" />
+            Dashboard
+          </button>
+          <button
+            className={`sidebar-item ${visao === "medicos" ? "sidebar-item-ativo" : ""}`}
+            onClick={() => setVisao("medicos")}
+          >
+            <img src={medicoImg} alt="" />
+            Médicos
+          </button>
+          <button
+            className={`sidebar-item ${visao === "pacientes" ? "sidebar-item-ativo" : ""}`}
+            onClick={() => setVisao("pacientes")}
+          >
+            <img src={pacienteImg} alt="" />
+            Pacientes
+          </button>
+          <button
+            className={`sidebar-item ${visao === "instituicoes" ? "sidebar-item-ativo" : ""}`}
+            onClick={() => setVisao("instituicoes")}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              style={{ width: 26, height: 26, opacity: 0.7 }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+              />
+            </svg>
+            Instituições
+          </button>
+        </nav>
+      </aside>
+
+      {/* ── Main ── */}
+      <div className="admin-main">
+        <header className="admin-topbar">
+          <SearchBar value={activeSearch} onChange={setActiveSearch} />
+          <label className="admin-perfil">
+            <img src={administradorImg} alt="" />
+            Administrador
+          </label>
+        </header>
+
+        <div className="admin-conteudo">
+          {/* ── Dashboard view ── */}
+          {visao === "dashboard" && (
+            <>
+              <h2 className="dashboard-titulo">Dashboard do Administrador</h2>
+
+              <div className="dashboard-cards">
+                <div className="dashboard-card dashboard-card-destaque">
+                  <span className="dashboard-card-titulo">Total de Médicos</span>
+                  <span className="dashboard-card-valor">{stats.totalMedicos}</span>
+                  <span className="dashboard-card-sub">Cadastrados no sistema</span>
+                </div>
+                <div className="dashboard-card dashboard-card-destaque">
+                  <span className="dashboard-card-titulo">Total de Pacientes</span>
+                  <span className="dashboard-card-valor">{stats.totalPacientes}</span>
+                  <span className="dashboard-card-sub">Cadastrados</span>
+                </div>
+                <div className="dashboard-card dashboard-card-destaque">
+                  <span className="dashboard-card-titulo">Total de Triagens</span>
+                  <span className="dashboard-card-valor">{stats.totalTriagens}</span>
+                  <span className="dashboard-card-sub">Realizadas no total</span>
+                </div>
+                <div className="dashboard-card dashboard-card-destaque">
+                  <span className="dashboard-card-titulo">Encaminhados</span>
+                  <span className="dashboard-card-valor">{stats.encaminhados}</span>
+                  <span className="dashboard-card-sub">Para teste genético</span>
+                </div>
+              </div>
+
+              <div className="admin-tabela-container">
+                <h3 className="dashboard-secao-titulo">Atividade por Médico</h3>
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th>Médico</th>
+                      <th>CRM</th>
+                      <th>Triagens Realizadas</th>
+                      <th>Pacientes Atendidos</th>
+                      <th>Status</th>
+                      <th>Instituição</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {atividadesMedicos.map((a, i) => (
+                      <tr key={i}>
+                        <td>{a.medico}</td>
+                        <td>{a.crm}</td>
+                        <td>{a.consultas}</td>
+                        <td>{a.pacientes}</td>
+                        <td>
+                          <span
+                            className={`status-badge ${a.ativo ? "status-ativo" : "status-inativo"}`}
+                          >
+                            {a.ativo ? "Ativo" : "Inativo"}
+                          </span>
+                        </td>
+                        <td>{a.instituicao}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="admin-tabela-container">
+                <h3 className="dashboard-secao-titulo">Últimas Triagens Realizadas</h3>
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th>Paciente</th>
+                      <th>Sexo</th>
+                      <th>Médico</th>
+                      <th>Data</th>
+                      <th>Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRelatoriosDashboard.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.paciente}</td>
+                        <td>{r.sexo}</td>
+                        <td>{r.medico}</td>
+                        <td>{r.data}</td>
+                        <td>{r.score.toFixed(3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {/* ── Médicos view ── */}
+          {visao === "medicos" && (
+            <div className="admin-secao">
+              <div className="admin-filtros-header">
+                <h2>Filtros:</h2>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => setModalInstituicaoAberto(true)}
+                    className="btn-inserir"
+                    style={{ background: "var(--cor-terciaria)" }}
+                  >
+                    + Instituição
+                  </button>
+                  <button
+                    onClick={() => setModalCadastrarAberto(true)}
+                    className="btn-inserir"
+                  >
+                    + Inserir usuário
+                  </button>
+                </div>
+              </div>
+
+              <SortChips
+                chips={medicosSortChips}
+                active={sortMedicosField}
+                order={sortMedicosOrder}
+                onSort={handleSortMedicos}
+              />
+
+              <div className="admin-tabela-container">
+                <h3>Lista de usuários:</h3>
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>CRM</th>
+                      <th>Email</th>
+                      <th>CPF</th>
+                      <th>Instituição</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedMedicos.map((m, i) => (
+                      <tr key={i}>
+                        <td>{m.nome}</td>
+                        <td>{m.crm || "-"}</td>
+                        <td>{m.email}</td>
+                        <td>{formatarCPF(m.cpf)}</td>
+                        <td>{m.instituicao || "-"}</td>
+                        <td>
+                          <label className="admin-switch">
+                            <input
+                              type="checkbox"
+                              checked={m.ativo}
+                              onChange={() => alternarStatusMedico(m)}
+                            />
+                            <span>{m.ativo ? "Ativo" : "Inativo"}</span>
+                          </label>
+                        </td>
+                        <td>
+                          <div className="acoes-celula">
+                            <button
+                              className="btn-acao"
+                              onClick={() => setMedicoParaEditar(m)}
+                            >
+                              <img src={pincelImg} alt="Editar" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── Pacientes view ── */}
+          {visao === "pacientes" && (
+            <div className="admin-secao">
+              <div className="admin-filtros-header">
+                <h2>Filtros:</h2>
+              </div>
+
+              <SortChips
+                chips={pacientesSortChips}
+                active={sortPacientesField}
+                order={sortPacientesOrder}
+                onSort={handleSortPacientes}
+              />
+
+              <div className="admin-tabela-container">
+                <h3>Lista de pacientes:</h3>
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Idade</th>
+                      <th>Sexo Biológico</th>
+                      <th>Nascimento</th>
+                      <th>CPF</th>
+                      <th>Instituição</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedPacientes.map((p, i) => (
+                      <tr key={i}>
+                        <td>{p.nome}</td>
+                        <td>{calcularIdade(p.data_nascimento)} anos</td>
+                        <td>{p.sexo}</td>
+                        <td>
+                          {p.data_nascimento.split("-").reverse().join("/")}
+                        </td>
+                        <td>{formatarCPF(p.cpf)}</td>
+                        <td>{p.instituicao || "-"}</td>
+                        <td>
+                          <div className="acoes-celula">
+                            <button
+                              className="btn-acao"
+                              onClick={() => setPacienteParaEditar(p)}
+                              title="Editar paciente"
+                            >
+                              <img src={pincelImg} alt="Editar" />
+                            </button>
+                            <button
+                              className="btn-acao btn-acao-fotos"
+                              onClick={() => setPacienteFotosVisualizar(p)}
+                              title="Ver fotos"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={1.5}
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── Instituições view ── */}
+          {visao === "instituicoes" && (
+            <div className="admin-secao">
+              <div className="admin-filtros-header">
+                <h2>Instituições:</h2>
+                <button
+                  onClick={() => setModalInstituicaoAberto(true)}
+                  className="btn-inserir"
+                >
+                  + Instituição
+                </button>
+              </div>
+
+              <div className="admin-tabela-container">
+                <h3>Lista de instituições:</h3>
+                <table className="admin-tabela">
+                  <thead>
+                    <tr>
+                      <th>Nome Fantasia</th>
+                      <th>Razão Social</th>
+                      <th>CNPJ</th>
+                      <th>Cidade / UF</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInstituicoes.map((inst, i) => (
+                      <tr key={i}>
+                        <td>{inst.nome_fantasia}</td>
+                        <td>{inst.nome || "-"}</td>
+                        <td>{formatarCNPJ(inst.cnpj)}</td>
+                        <td>
+                          {inst.cidade} / {inst.estado}
+                        </td>
+                        <td>
+                          <div className="acoes-celula">
+                            <button
+                              className="btn-acao"
+                              onClick={() => setInstituicaoParaEditar(inst)}
+                              title="Editar instituição"
+                            >
+                              <img src={pincelImg} alt="Editar" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+        <Footer />
+      </div>
+
+      {/* ── Modals ── */}
+      {modalCadastrarAberto && (
+        <ModalCadastrarMedico
+          onFechar={() => {
+            setModalCadastrarAberto(false);
+            fetchData();
+          }}
+        />
+      )}
+      {modalInstituicaoAberto && (
+        <ModalCadastrarInstituicao
+          onFechar={() => {
+            setModalInstituicaoAberto(false);
+            fetchData();
+          }}
+        />
+      )}
+      {instituicaoParaEditar && (
+        <ModalEditarInstituicao
+          instituicao={instituicaoParaEditar}
+          onFechar={() => setInstituicaoParaEditar(null)}
+          onSucesso={fetchData}
+        />
+      )}
+      {medicoParaEditar && (
+        <ModalEditarUsuario
+          usuario={medicoParaEditar}
+          onFechar={() => setMedicoParaEditar(null)}
+          onSucesso={fetchData}
+        />
+      )}
+      {pacienteParaEditar && (
+        <ModalEditarPaciente
+          paciente={pacienteParaEditar}
+          onFechar={() => setPacienteParaEditar(null)}
+          onSucesso={fetchData}
+        />
+      )}
+      {pacienteFotosVisualizar && (
+        <ModalFotosPaciente
+          paciente={pacienteFotosVisualizar}
+          onFechar={() => setPacienteFotosVisualizar(null)}
+        />
+      )}
+    </div>
+  );
 }
 
-export default PaginaAdministrador
+export default PaginaAdministrador;

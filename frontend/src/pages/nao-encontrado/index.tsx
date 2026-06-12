@@ -1,5 +1,5 @@
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
-import { Footer } from '../../componentes/footer'
+import { Footer } from '../../components/footer'
 import './nao-encontrado-estilos.css'
 
 export function NaoEncontrado() {

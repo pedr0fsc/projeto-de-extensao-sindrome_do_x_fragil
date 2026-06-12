@@ -24,6 +24,8 @@ interface Paciente {
     data_nascimento: string
     telefone: string
     email: string
+    id_instituto: number | null
+    instituicao?: string | null
     foto_face?: string | null
     foto_perfil_esq?: string | null
     foto_perfil_dir?: string | null
@@ -317,6 +319,8 @@ export function ModalConsultarPacientes({ onFechar }: Props) {
                                     <span>{paciente.sexo}</span>
                                     <span className='perfil-sep'>·</span>
                                     <span>Nasc.: {paciente.data_nascimento.split('-').reverse().join('/')}</span>
+                                    <span className='perfil-sep'>·</span>
+                                    <span>Inst.: {paciente.instituicao || '-'}</span>
                                 </div>
                             </div>
                         </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
-import { Footer } from '../../componentes/footer'
+import { Footer } from '../../components/footer'
 import './pagina-recuperar.css'
 
 export function PaginaResetSenha() {

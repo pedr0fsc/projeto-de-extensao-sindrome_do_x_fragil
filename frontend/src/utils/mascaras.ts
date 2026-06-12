@@ -1,5 +1,6 @@
-export const formatarCPF = (valor: string) => {
-    const apenasNumeros = valor.replace(/\D/g, '')
+export const formatarCPF = (valor: string | undefined | null) => {
+    if (!valor) return ''
+    const apenasNumeros = valor.toString().replace(/\D/g, '')
     return apenasNumeros
         .replace(/(\d{3})(\d)/, '$1.$2')
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -20,7 +21,7 @@ export const limparFormatacao = (valor: string) => {
 }
 
 export const formatarCRM = (valor: string) => {
-    const limpo = valor.replace(/[^0-9a-zA-Z/]/g, '')
+    const limpo = valor.replace(/[^0-9a-zA-Z\/]/g, '')
     const partes = limpo.split('/')
     const numero = partes[0].replace(/\D/g, '').slice(0, 6)
     if (partes.length > 1) {

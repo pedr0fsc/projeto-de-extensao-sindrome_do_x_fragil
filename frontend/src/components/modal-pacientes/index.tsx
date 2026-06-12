@@ -89,6 +89,25 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
         )
     }
 
+    const validarStep1 = () => {
+        if (!nome.trim() || !cpf.trim() || !dataNascimento || !genero) {
+            mostrarAlerta('Por favor, preencha todos os campos obrigatórios (*).', 'erro')
+            return false
+        }
+        if (email.trim() && !email.includes('@')) {
+            mostrarAlerta('O e-mail informado é inválido (deve conter @).', 'erro')
+            return false
+        }
+        return true
+    }
+
+    const handleProximo = () => {
+        if (step === 1) {
+            if (!validarStep1()) return
+        }
+        setStep(s => s + 1)
+    }
+
     const handleSelecionarFoto = (
         e: React.ChangeEvent<HTMLInputElement>,
         setFile: (f: File | null) => void,
@@ -221,7 +240,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                         <div className='ms-secao'>
                             <h3 className='ms-secao-titulo'>Dados Básicos</h3>
                             <div className='ms-campo-full'>
-                                <label className='ms-label'>Nome completo</label>
+                                <label className='ms-label'>Nome completo *</label>
                                 <input
                                     className='ms-input'
                                     type="text"
@@ -233,7 +252,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                             </div>
                             <div className='ms-linha-dupla'>
                                 <div className='ms-campo'>
-                                    <label className='ms-label'>CPF</label>
+                                    <label className='ms-label'>CPF *</label>
                                     <input
                                         className='ms-input'
                                         type="text"
@@ -244,7 +263,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                     />
                                 </div>
                                 <div className='ms-campo'>
-                                    <label className='ms-label'>Data de nascimento</label>
+                                    <label className='ms-label'>Data de nascimento *</label>
                                     <input
                                         className='ms-input'
                                         type="date"
@@ -256,7 +275,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                 </div>
                             </div>
                             <div className='ms-campo-full'>
-                                <label className='ms-label'>Sexo Biológico</label>
+                                <label className='ms-label'>Sexo Biológico *</label>
                                 <div className='ms-radio-grupo'>
                                     {['Masculino', 'Feminino'].map(g => (
                                         <button
@@ -339,7 +358,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                     {step === 4 && (
                         <div className='ms-secao'>
                             <h3 className='ms-secao-titulo'>Fotos do Paciente</h3>
-                            <p className='ms-secao-subtitulo'>Opcional — adicione fotos para registro clínico (frente e perfis)</p>
+                            <p className='ms-secao-subtitulo'>Formatos aceitos: JPG, PNG, HEIC (iPhone) — Máx: 10MB por foto</p>
                             <div className='ms-fotos-grid'>
                                 {fotoFields.map(campo => {
                                     const state = fotoState[campo.key]
@@ -349,7 +368,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                             <input
                                                 ref={state.ref}
                                                 type="file"
-                                                accept="image/jpeg,image/png,image/webp"
+                                                accept="image/jpeg,image/png,image/webp,.heic,.heif"
                                                 style={{ display: 'none' }}
                                                 onChange={e => handleSelecionarFoto(e, state.set, state.setPreview)}
                                             />
@@ -398,7 +417,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                         </button>
                     )}
                     {step < TOTAL_STEPS ? (
-                        <button className='ms-btn-primario' onClick={() => setStep(s => s + 1)}>
+                        <button className='ms-btn-primario' onClick={handleProximo}>
                             Salvar e Continuar
                         </button>
                     ) : (
