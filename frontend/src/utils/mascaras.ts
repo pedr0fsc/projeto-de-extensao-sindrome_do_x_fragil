@@ -1,5 +1,6 @@
-export const formatarCPF = (valor: string) => {
-    const apenasNumeros = valor.replace(/\D/g, '')
+export const formatarCPF = (valor: string | undefined | null) => {
+    if (!valor) return ''
+    const apenasNumeros = valor.toString().replace(/\D/g, '')
     return apenasNumeros
         .replace(/(\d{3})(\d)/, '$1.$2')
         .replace(/(\d{3})(\d)/, '$1.$2')

@@ -408,4 +408,4 @@ async def api_trocar_medico(request: Request, db: Session = Depends(get_db)):
 @router.get("/api/medicos")
 async def api_medicos(db: Session = Depends(get_db)):
     medicos = db.query(Medico).all()
-    return [{"id": m.id, "nome": m.usuario.nome, "crm": m.crm, "email": m.usuario.email, "id_instituto": m.id_instituto, "instituicao": m.instituicao.nome_fantasia if m.instituicao else None, "ativo": m.usuario.ativo} for m in medicos]
+    return [{"id": m.id, "nome": m.usuario.nome, "crm": m.crm, "cpf": m.usuario.cpf, "telefone": m.usuario.telefone, "email": m.usuario.email, "id_instituto": m.id_instituto, "instituicao": m.instituicao.nome_fantasia if m.instituicao else None, "ativo": m.usuario.ativo} for m in medicos]
