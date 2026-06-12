@@ -339,7 +339,10 @@ async def api_atualizar_usuario(id: int, request: Request, db: Session = Depends
     require_admin(request)
     body = await request.json()
     u = db.query(Usuario).filter(Usuario.id == id).first()
-    u.nome = body["nome"]; u.email = body["email"]; u.tipo = body["tipo"]; u.ativo = body.get("ativo", u.ativo)
+    u.nome = body.get("nome", u.nome)
+    u.email = body.get("email", u.email)
+    u.tipo = body.get("tipo", u.tipo)
+    u.ativo = body.get("ativo", u.ativo)
     if body.get("senha"): u.senha = hash_senha(body["senha"])
     if u.tipo == "Médico":
         m = db.query(Medico).filter(Medico.id == id).first()
