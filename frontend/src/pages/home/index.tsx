@@ -1,8 +1,8 @@
-import { BlocoInicial } from '../../componentes/bloco-inicial'
-import {BarraPrincipal} from '../../componentes/barra-principal'
-import { BlocoSecundario } from '../../componentes/bloco-secundario'
-import { Footer } from '../../componentes/footer'
-import { CardSintomas } from '../../componentes/card-sintomas'
+import { BlocoInicial } from '../../components/bloco-inicial'
+import {BarraPrincipal} from '../../components/barra-principal'
+import { BlocoSecundario } from '../../components/bloco-secundario'
+import { Footer } from '../../components/footer'
+import { CardSintomas } from '../../components/card-sintomas'
 function Home() {
     return (
         <>

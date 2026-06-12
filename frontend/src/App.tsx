@@ -5,7 +5,7 @@ import PaginaMedicos from '../src/pages/medicos'
 import PaginaAdministrador from '../src/pages/administrador'
 import NaoEncontrado from '../src/pages/nao-encontrado'
 import PaginaResetSenha from '../src/pages/recuperar-senha'
-import { AlertaProvider } from '../src/componentes/alerta'
+import { AlertaProvider } from '../src/components/alerta'
 
 import './App.css'
 
