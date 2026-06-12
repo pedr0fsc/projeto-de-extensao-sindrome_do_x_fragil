@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import '../modal-pacientes/modal-pacientes-estilos.css'
 import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
@@ -25,17 +25,8 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
     const [genero, setGenero] = useState(paciente.sexo)
     const [telefone, setTelefone] = useState(formatarTelefone(paciente.telefone))
     const [email, setEmail] = useState(paciente.email)
-    const [idInstituto, setIdInstituto] = useState<number | null>(paciente.id_instituto)
-    const [instituicoes, setInstituicoes] = useState<{ id: number; nome_fantasia: string }[]>([])
     const [loading, setLoading] = useState(false)
     const { mostrarAlerta } = useAlerta()
-
-    useEffect(() => {
-        fetch('/api/instituicoes')
-            .then(res => res.json())
-            .then(data => setInstituicoes(data || []))
-            .catch(err => console.error('Erro ao carregar instituições:', err))
-    }, [])
 
     const handleSalvar = async () => {
         if (!nome.trim() || !cpf.trim() || !genero || !dataNascimento) {
@@ -57,8 +48,7 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                     sexo: genero,
                     data_nascimento: dataNascimento,
                     telefone: limparFormatacao(telefone),
-                    email,
-                    id_instituto: idInstituto || undefined
+                    email
                 })
             })
             const data = await response.json()
@@ -143,15 +133,6 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                                 <label className='ms-label'>E-mail</label>
                                 <input className='ms-input' type="email" value={email} onChange={e => setEmail(e.target.value)} />
                             </div>
-                        </div>
-                        <div className='ms-campo-full'>
-                            <label className='ms-label'>Instituição</label>
-                            <select className='ms-select' value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
-                                <option value="">Selecione uma instituição</option>
-                                {instituicoes.map(inst => (
-                                    <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
-                                ))}
-                            </select>
                         </div>
                     </div>
                 </div>

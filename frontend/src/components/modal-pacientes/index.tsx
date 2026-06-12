@@ -51,8 +51,6 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
     const [genero, setGenero] = useState('')
     const [telefone, setTelefone] = useState('')
     const [email, setEmail] = useState('')
-    const [idInstituto, setIdInstituto] = useState<number | null>(null)
-    const [instituicoes, setInstituicoes] = useState<{ id: number; nome_fantasia: string }[]>([])
 
     // Acompanhante
     const [tipoAcompanhante, setTipoAcompanhante] = useState('')
@@ -83,11 +81,6 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
             .then(res => res.json())
             .then(data => setSintomasList(data))
             .catch(err => console.error("Erro ao carregar sintomas", err))
-
-        fetch('/api/instituicoes')
-            .then(res => res.json())
-            .then(data => setInstituicoes(data || []))
-            .catch(err => console.error("Erro ao carregar instituições", err))
     }, [])
 
     const toggleSintoma = (id: number) => {
@@ -144,8 +137,7 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                     sexo: genero,
                     data_nascimento: dataNascimento,
                     telefone: limparFormatacao(telefone),
-                    email,
-                    id_instituto: idInstituto || undefined
+                    email
                 })
             })
             const dataPaciente = await resPaciente.json()
@@ -306,15 +298,6 @@ export function ModalCadastrarPaciente({ onFechar }: Props) {
                                     <label className='ms-label'>E-mail</label>
                                     <input className='ms-input' type="email" placeholder="Digite o e-mail" value={email} onChange={e => setEmail(e.target.value)} />
                                 </div>
-                            </div>
-                            <div className='ms-campo-full'>
-                                <label className='ms-label'>Instituição</label>
-                                <select className='ms-select' value={idInstituto === null ? '' : idInstituto} onChange={e => setIdInstituto(e.target.value === "" ? null : Number(e.target.value))}>
-                                    <option value="">Selecione uma instituição</option>
-                                    {instituicoes.map(inst => (
-                                        <option key={inst.id} value={inst.id}>{inst.nome_fantasia}</option>
-                                    ))}
-                                </select>
                             </div>
                         </div>
                     )}

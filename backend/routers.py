@@ -140,27 +140,23 @@ async def api_criar_instituicao(request: Request, db: Session = Depends(get_db))
     nova = Instituicao(**body)
     db.add(nova)
     db.commit()
+    db.refresh(nova)
     return {"success": True, "id": nova.id}
 
 @router.put("/api/instituicao/{id}")
 async def api_atualizar_instituicao(id: int, request: Request, db: Session = Depends(get_db)):
     require_admin(request)
     body = await request.json()
+    
     inst = db.query(Instituicao).filter(Instituicao.id == id).first()
     if not inst: raise HTTPException(status_code=404, detail="Não encontrada")
     
-    inst.nome_fantasia = body.get("nome_fantasia", inst.nome_fantasia)
-    inst.nome = body.get("nome", inst.nome)
-    inst.cnpj = body.get("cnpj", inst.cnpj)
-    inst.rua = body.get("rua", inst.rua)
-    inst.numero = body.get("numero", inst.numero)
-    inst.complemento = body.get("complemento", inst.complemento)
-    inst.bairro = body.get("bairro", inst.bairro)
-    inst.cidade = body.get("cidade", inst.cidade)
-    inst.estado = body.get("estado", inst.estado)
-    inst.cep = body.get("cep", inst.cep)
+    for key, value in body.items():
+        if hasattr(inst, key):
+            setattr(inst, key, value)
     
     db.commit()
+    db.refresh(inst)
     return {"success": True}
 
 @router.post("/api/paciente/buscar")
@@ -196,7 +192,14 @@ async def api_cadastrar_paciente(request: Request, db: Session = Depends(get_db)
     id_usuario = request.session.get("id_usuario")
     medico = db.query(Medico).filter(Medico.id == id_usuario).first()
     
-    id_inst = body.get("id_instituto") if body.get("id_instituto") else None
+    # Ensure we get the institution ID either from the request body or the doctor's profile
+    id_inst = body.get("id_instituto")
+    if not id_inst and medico:
+        id_inst = medico.id_instituto
+    
+    if not id_inst:
+        raise HTTPException(status_code=400, detail="Instituição não definida para o médico")
+        
     id_medico = medico.id if medico else db.query(Medico).first().id
     
     novo = Paciente(
@@ -339,10 +342,15 @@ async def api_atualizar_usuario(id: int, request: Request, db: Session = Depends
     require_admin(request)
     body = await request.json()
     u = db.query(Usuario).filter(Usuario.id == id).first()
+    if not u: raise HTTPException(status_code=404, detail="Usuário não encontrado")
     u.nome = body.get("nome", u.nome)
     u.email = body.get("email", u.email)
     u.tipo = body.get("tipo", u.tipo)
     u.ativo = body.get("ativo", u.ativo)
+    # Ensure CPF and other fields are updated if present
+    if "cpf" in body: u.cpf = body["cpf"].replace(".","").replace("-","")
+    if "telefone" in body: u.telefone = body["telefone"]
+    
     if body.get("senha"): u.senha = hash_senha(body["senha"])
     if u.tipo == "Médico":
         m = db.query(Medico).filter(Medico.id == id).first()
@@ -350,7 +358,9 @@ async def api_atualizar_usuario(id: int, request: Request, db: Session = Depends
             if body.get("crm"): m.crm = body["crm"]
             if body.get("id_instituto"): m.id_instituto = body["id_instituto"]
         elif body.get("crm"): db.add(Medico(id=id, crm=body["crm"], id_instituto=body.get("id_instituto")))
+    db.add(u)
     db.commit()
+    db.refresh(u)
     return {"success": True}
 
 @router.put("/api/paciente/{id}")
@@ -358,12 +368,19 @@ async def api_atualizar_paciente(id: int, request: Request, db: Session = Depend
     require_auth(request)
     body = await request.json()
     p = db.query(Paciente).filter(Paciente.id == id).first()
-    p.nome = body["nome"]; p.sexo = body["sexo"]; p.data_nascimento = datetime.strptime(body["data_nascimento"], "%Y-%m-%d").date()
-    p.email = body["email"]
+    if not p: raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    p.nome = body.get("nome", p.nome)
+    p.sexo = body.get("sexo", p.sexo)
+    if body.get("data_nascimento"): p.data_nascimento = datetime.strptime(body["data_nascimento"], "%Y-%m-%d").date()
+    p.email = body.get("email", p.email)
+    p.telefone = body.get("telefone", p.telefone)
+    if "cpf" in body: p.cpf = body["cpf"].replace(".", "").replace("-", "")
     # Explicitly check for id_instituto to allow clearing the link
     if "id_instituto" in body:
         p.id_instituto = body["id_instituto"]
+    db.add(p)
     db.commit()
+    db.refresh(p)
     return {"success": True}
 
 @router.post("/api/paciente/{id}/fotos")

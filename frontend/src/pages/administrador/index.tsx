@@ -763,7 +763,6 @@ export function PaginaAdministrador() {
                       <th>Razão Social</th>
                       <th>CNPJ</th>
                       <th>Cidade / UF</th>
-                      <th>Endereço</th>
                       <th>Ações</th>
                     </tr>
                   </thead>
@@ -775,12 +774,6 @@ export function PaginaAdministrador() {
                         <td>{formatarCNPJ(inst.cnpj)}</td>
                         <td>
                           {inst.cidade} / {inst.estado}
-                        </td>
-                        <td>
-                          {inst.rua}, {inst.numero}
-                          {inst.complemento
-                            ? `, ${inst.complemento}`
-                            : ""} — {inst.bairro}
                         </td>
                         <td>
                           <div className="acoes-celula">
