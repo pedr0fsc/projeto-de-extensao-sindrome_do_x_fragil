@@ -1,0 +1,19 @@
+@import "../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css";
+
+.form-campo-pequeno {
+    flex: 0 0 90px !important;
+}
+
+.form-campo-estado {
+    flex: 0 0 70px !important;
+}
+
+.input-erro {
+    border-color: #e53e3e !important;
+}
+
+.campo-erro-msg {
+    font-size: 11px;
+    color: #e53e3e;
+    margin: 0;
+}

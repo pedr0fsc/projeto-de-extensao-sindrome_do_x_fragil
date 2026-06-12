@@ -91,7 +91,14 @@ export function ModalEditarPaciente({ paciente, onFechar, onSucesso }: Props) {
                             </div>
                             <div className='ms-campo'>
                                 <label className='ms-label'>Data de nascimento</label>
-                                <input className='ms-input' type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} />
+                                <input
+                                    className='ms-input'
+                                    type="date"
+                                    value={dataNascimento}
+                                    onChange={e => setDataNascimento(e.target.value)}
+                                    max={new Date().toISOString().split('T')[0]}
+                                    min={`${new Date().getFullYear() - 120}-01-01`}
+                                />
                             </div>
                         </div>
                         <div className='ms-campo-full'>

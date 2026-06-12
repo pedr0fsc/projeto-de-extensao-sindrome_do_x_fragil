@@ -1021,6 +1021,67 @@ async def api_trocar_medico(request: Request, db=Depends(get_db), _=Depends(requ
     return {"success": True}
 
 
+@app.get("/api/instituicao")
+async def api_listar_instituicoes(db=Depends(get_db)):
+    instituicoes = db.query(Instituicao).all()
+    return [
+        {
+            "id": i.id,
+            "nome_fantasia": i.nome_fantasia,
+            "nome": i.nome or "",
+            "cnpj": i.cnpj,
+            "rua": i.rua,
+            "numero": i.numero,
+            "complemento": i.complemento or "",
+            "bairro": i.bairro,
+            "cidade": i.cidade,
+            "estado": i.estado,
+            "cep": i.cep,
+        }
+        for i in instituicoes
+    ]
+
+
+@app.post("/api/instituicao")
+async def api_criar_instituicao(request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()
+    nova = Instituicao(
+        nome_fantasia=body["nome_fantasia"],
+        nome=body.get("nome"),
+        cnpj=body["cnpj"].replace(".", "").replace("/", "").replace("-", ""),
+        rua=body["rua"],
+        numero=body["numero"],
+        complemento=body.get("complemento"),
+        bairro=body["bairro"],
+        cidade=body["cidade"],
+        estado=body["estado"],
+        cep=body["cep"],
+    )
+    db.add(nova)
+    db.commit()
+    return {"success": True, "id": nova.id}
+
+
+@app.put("/api/instituicao/{id}")
+async def api_atualizar_instituicao(id: int, request: Request, db=Depends(get_db), _=Depends(require_admin)):
+    body = await request.json()
+    inst = db.query(Instituicao).filter(Instituicao.id == id).first()
+    if not inst:
+        raise HTTPException(status_code=404, detail="Instituição não encontrada")
+    inst.nome_fantasia = body["nome_fantasia"]
+    inst.nome = body.get("nome")
+    inst.cnpj = body["cnpj"].replace(".", "").replace("/", "").replace("-", "")
+    inst.rua = body["rua"]
+    inst.numero = body["numero"]
+    inst.complemento = body.get("complemento")
+    inst.bairro = body["bairro"]
+    inst.cidade = body["cidade"]
+    inst.estado = body["estado"]
+    inst.cep = body["cep"]
+    db.commit()
+    return {"success": True}
+
+
 @app.get("/api/medicos")
 async def api_medicos(db=Depends(get_db)):
     medicos = db.query(Medico).join(Usuario).all()

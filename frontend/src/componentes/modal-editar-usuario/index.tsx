@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import '../modal-cadastrar-medico/modal-cadastrar-medico-estilos.css'
-import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
@@ -25,11 +25,16 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
     const [mostrarSenha, setMostrarSenha] = useState(false)
     const [telefone, setTelefone] = useState(formatarTelefone(usuario.telefone))
     const [crm, setCrm] = useState(usuario.crm || '')
-    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as any)
+    const [tipo, setTipo] = useState<'Médico' | 'Administrador'>(usuario.tipo as 'Médico' | 'Administrador')
     const [loading, setLoading] = useState(false)
+    const [tentouSubmit, setTentouSubmit] = useState(false)
     const { mostrarAlerta } = useAlerta()
 
+    const erroEmail = !validarEmail(email)
+
     const handleSalvar = async () => {
+        setTentouSubmit(true)
+        if (erroEmail) return
         setLoading(true)
         try {
             const response = await fetch(`/api/usuario/${usuario.id}`, {
@@ -77,28 +82,34 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     </div>
                     <div className='form-campo'>
                         <label>E-mail</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            className={tentouSubmit && erroEmail ? 'input-erro' : ''}
+                        />
+                        {tentouSubmit && erroEmail && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>CPF</label>
-                            <input 
-                                type="text" 
-                                value={cpf} 
-                                onChange={e => setCpf(formatarCPF(e.target.value))} 
+                            <input
+                                type="text"
+                                value={cpf}
+                                onChange={e => setCpf(formatarCPF(e.target.value))}
                                 maxLength={14}
                             />
                         </div>
                         <div className='form-campo'>
-                            <label>Nova Senha (deixe vazio se não quiser alterar)</label>
+                            <label>Nova Senha (deixe vazio para não alterar)</label>
                             <div className='password-input-wrapper'>
-                                <input 
-                                    type={mostrarSenha ? 'text' : 'password'} 
-                                    value={senha} 
-                                    onChange={e => setSenha(e.target.value)} 
+                                <input
+                                    type={mostrarSenha ? 'text' : 'password'}
+                                    value={senha}
+                                    onChange={e => setSenha(e.target.value)}
                                 />
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className='password-toggle-btn'
                                     onClick={() => setMostrarSenha(!mostrarSenha)}
                                     title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
@@ -120,16 +131,16 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>Telefone</label>
-                            <input 
-                                type="text" 
-                                value={telefone} 
-                                onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                            <input
+                                type="text"
+                                value={telefone}
+                                onChange={e => setTelefone(formatarTelefone(e.target.value))}
                                 maxLength={15}
                             />
                         </div>
                         <div className='form-campo'>
                             <label>Tipo</label>
-                            <select value={tipo} onChange={e => setTipo(e.target.value as any)}>
+                            <select value={tipo} onChange={e => setTipo(e.target.value as 'Médico' | 'Administrador')}>
                                 <option value="Médico">Médico</option>
                                 <option value="Administrador">Administrador</option>
                             </select>
@@ -138,11 +149,12 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
                     {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
-                            <input 
-                                type="text" 
-                                value={crm} 
-                                onChange={e => setCrm(e.target.value)} 
-                                maxLength={10}
+                            <input
+                                type="text"
+                                value={crm}
+                                onChange={e => setCrm(formatarCRM(e.target.value))}
+                                maxLength={9}
+                                placeholder="000000/SP"
                             />
                         </div>
                     )}
@@ -159,3 +171,5 @@ export function ModalEditarUsuario({ usuario, onFechar, onSucesso }: Props) {
         </div>
     )
 }
+
+export default ModalEditarUsuario

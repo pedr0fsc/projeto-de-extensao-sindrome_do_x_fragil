@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './modal-cadastrar-medico-estilos.css'
-import { formatarCPF, formatarTelefone, limparFormatacao } from '../../utils/mascaras'
+import { formatarCPF, formatarTelefone, formatarCRM, validarEmail, limparFormatacao } from '../../utils/mascaras'
 import { useAlerta } from '../alerta'
 
 interface Props {
@@ -22,7 +22,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
 
     const erros = {
         nome: !nome.trim(),
-        email: !email.trim(),
+        email: !validarEmail(email),
         cpf: limparFormatacao(cpf).length !== 11,
         senha: !senha,
     }
@@ -88,7 +88,7 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                             onChange={e => setEmail(e.target.value)}
                             className={tentouSubmit && erros.email ? 'input-erro' : ''}
                         />
-                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail é obrigatório</p>}
+                        {tentouSubmit && erros.email && <p className='campo-erro-msg'>E-mail inválido (deve conter @)</p>}
                     </div>
                     <div className='form-linha'>
                         <div className='form-campo'>
@@ -112,8 +112,8 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                                     onChange={e => setSenha(e.target.value)}
                                     className={tentouSubmit && erros.senha ? 'input-erro' : ''}
                                 />
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className='password-toggle-btn'
                                     onClick={() => setMostrarSenha(!mostrarSenha)}
                                     title={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
@@ -136,17 +136,17 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     <div className='form-linha'>
                         <div className='form-campo'>
                             <label>Telefone</label>
-                            <input 
-                                type="text" 
-                                value={telefone} 
-                                onChange={e => setTelefone(formatarTelefone(e.target.value))} 
+                            <input
+                                type="text"
+                                value={telefone}
+                                onChange={e => setTelefone(formatarTelefone(e.target.value))}
                                 maxLength={15}
                                 placeholder="(00) 00000-0000"
                             />
                         </div>
                         <div className='form-campo'>
                             <label>Tipo</label>
-                            <select value={tipo} onChange={e => setTipo(e.target.value as any)}>
+                            <select value={tipo} onChange={e => setTipo(e.target.value as 'Médico' | 'Administrador')}>
                                 <option value="Médico">Médico</option>
                                 <option value="Administrador">Administrador</option>
                             </select>
@@ -155,11 +155,12 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
                     {tipo === 'Médico' && (
                         <div className='form-campo'>
                             <label>CRM</label>
-                            <input 
-                                type="text" 
-                                value={crm} 
-                                onChange={e => setCrm(e.target.value)} 
-                                maxLength={10}
+                            <input
+                                type="text"
+                                value={crm}
+                                onChange={e => setCrm(formatarCRM(e.target.value))}
+                                maxLength={9}
+                                placeholder="000000/SP"
                             />
                         </div>
                     )}
@@ -176,4 +177,5 @@ export function ModalCadastrarMedico({ onFechar }: Props) {
         </div>
     )
 }
+
 export default ModalCadastrarMedico

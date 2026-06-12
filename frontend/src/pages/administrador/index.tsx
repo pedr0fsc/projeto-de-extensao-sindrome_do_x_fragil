@@ -3,6 +3,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { ModalCadastrarMedico } from '../../componentes/modal-cadastrar-medico'
 import { ModalEditarUsuario } from '../../componentes/modal-editar-usuario'
 import { ModalEditarPaciente } from '../../componentes/modal-editar-paciente'
+import { ModalCadastrarInstituicao } from '../../componentes/modal-cadastrar-instituicao'
+import { ModalEditarInstituicao } from '../../componentes/modal-editar-instituicao'
 import { ModalFotosPaciente } from '../../componentes/modal-fotos-paciente'
 import { useTransitionNavigate } from '../../hooks/useTransitionNavigate'
 import dashboardImg from '../../assets/dashboard.png'
@@ -10,11 +12,12 @@ import medicoImg from '../../assets/medico.png'
 import pacienteImg from '../../assets/paciente.png'
 import administradorImg from '../../assets/administrador.png'
 import pincelImg from '../../assets/pincel.png'
+import logoImg from '../../assets/logo.png'
 import { formatarCPF } from '../../utils/mascaras'
 import { SearchBar } from '../../componentes/search-bar'
 import { Footer } from '../../componentes/footer'
 
-type Visao = 'dashboard' | 'medicos' | 'pacientes'
+type Visao = 'dashboard' | 'medicos' | 'pacientes' | 'instituicoes'
 type SortOrder = 'asc' | 'desc'
 type SortMedicosField = 'nome' | 'crm'
 type SortPacientesField = 'nome' | 'idade' | 'sexo' | 'nascimento'
@@ -28,6 +31,8 @@ interface Medico {
     telefone: string
     tipo: string
     ativo: boolean
+    id_instituto: number | null
+    instituicao: string | null
 }
 
 interface Paciente {
@@ -41,6 +46,20 @@ interface Paciente {
     foto_face?: string | null
     foto_perfil_esq?: string | null
     foto_perfil_dir?: string | null
+}
+
+interface Instituicao {
+    id: number
+    nome_fantasia: string
+    nome: string
+    cnpj: string
+    cep: string
+    rua: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
 }
 
 interface Relatorio {
@@ -64,7 +83,6 @@ function calcularIdade(dataNascimento: string): number {
     return idade
 }
 
-// ─── Reusable sort chips row ──────────────────────────────────────────────────
 interface SortChipsProps<T extends string> {
     chips: { label: string; value: T }[]
     active: T
@@ -91,42 +109,40 @@ function SortChips<T extends string>({ chips, active, order, onSort }: SortChips
     )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export function PaginaAdministrador() {
     const [modalCadastrarAberto, setModalCadastrarAberto] = useState(false)
+    const [modalInstituicaoAberto, setModalInstituicaoAberto] = useState(false)
     const [medicoParaEditar, setMedicoParaEditar] = useState<Medico | null>(null)
     const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null)
     const [pacienteFotosVisualizar, setPacienteFotosVisualizar] = useState<Paciente | null>(null)
+    const [instituicaoParaEditar, setInstituicaoParaEditar] = useState<Instituicao | null>(null)
     const [visao, setVisao] = useState<Visao>('dashboard')
     const [medicos, setMedicos] = useState<Medico[]>([])
     const [pacientes, setPacientes] = useState<Paciente[]>([])
+    const [instituicoes, setInstituicoes] = useState<Instituicao[]>([])
     const [relatorios, setRelatorios] = useState<Relatorio[]>([])
-    const [stats, setStats] = useState({
-        totalMedicos: 0,
-        totalPacientes: 0,
-        totalTriagens: 0,
-        encaminhados: 0,
-    })
+    const [stats, setStats] = useState({ totalMedicos: 0, totalPacientes: 0, totalTriagens: 0, encaminhados: 0 })
     const [loading, setLoading] = useState(true)
     const navigate = useTransitionNavigate()
 
-    // One search term per view — no cross-tab bleed
     const [searchDashboard, setSearchDashboard] = useState('')
     const [searchMedicos, setSearchMedicos] = useState('')
     const [searchPacientes, setSearchPacientes] = useState('')
+    const [searchInstituicoes, setSearchInstituicoes] = useState('')
 
     const activeSearch =
         visao === 'dashboard' ? searchDashboard :
         visao === 'medicos' ? searchMedicos :
+        visao === 'instituicoes' ? searchInstituicoes :
         searchPacientes
 
     const setActiveSearch = (val: string) => {
         if (visao === 'dashboard') setSearchDashboard(val)
         else if (visao === 'medicos') setSearchMedicos(val)
+        else if (visao === 'instituicoes') setSearchInstituicoes(val)
         else setSearchPacientes(val)
     }
 
-    // Sort states
     const [sortMedicosField, setSortMedicosField] = useState<SortMedicosField>('nome')
     const [sortMedicosOrder, setSortMedicosOrder] = useState<SortOrder>('asc')
     const [sortPacientesField, setSortPacientesField] = useState<SortPacientesField>('nome')
@@ -154,16 +170,15 @@ export function PaginaAdministrador() {
                     telefone: medico.telefone,
                     tipo: medico.tipo,
                     crm: medico.crm,
+                    id_instituto: medico.id_instituto,
                     ativo: !medico.ativo,
                 }),
             })
-
             const data = await response.json()
             if (!response.ok || !data.success) {
                 alert('Não foi possível alterar o status do médico.')
                 return
             }
-
             await fetchData()
         } catch (err) {
             console.error('Erro ao alterar status do médico:', err)
@@ -171,9 +186,6 @@ export function PaginaAdministrador() {
         }
     }
 
-    // ── Filtered + sorted lists ──────────────────────────────────────────────
-
-    // Dashboard: médicos activity table filtered by dashboard search
     const atividadesMedicos = useMemo(() => {
         const term = searchDashboard.toLowerCase()
         return medicos
@@ -185,6 +197,7 @@ export function PaginaAdministrador() {
                     ativo: m.ativo,
                     consultas: triagensMedico.length,
                     pacientes: new Set(triagensMedico.map(r => r.paciente)).size,
+                    instituicao: m.instituicao || '-',
                 }
             })
             .filter(a =>
@@ -192,11 +205,11 @@ export function PaginaAdministrador() {
                 a.medico.toLowerCase().includes(term) ||
                 a.crm.toLowerCase().includes(term) ||
                 a.consultas.toString().includes(term) ||
-                a.pacientes.toString().includes(term)
+                a.pacientes.toString().includes(term) ||
+                a.instituicao.toLowerCase().includes(term)
             )
     }, [medicos, relatorios, searchDashboard])
 
-    // Dashboard: últimas triagens filtered by dashboard search
     const filteredRelatoriosDashboard = useMemo(() => {
         const term = searchDashboard.toLowerCase()
         if (!term) return relatorios.slice(0, 5)
@@ -211,7 +224,6 @@ export function PaginaAdministrador() {
             .slice(0, 5)
     }, [relatorios, searchDashboard])
 
-    // Médicos view: filtered + sorted
     const sortedMedicos = useMemo(() => {
         const term = searchMedicos.toLowerCase()
         const filtered = term
@@ -220,10 +232,10 @@ export function PaginaAdministrador() {
                 m.crm.toLowerCase().includes(term) ||
                 m.cpf.includes(term) ||
                 m.email.toLowerCase().includes(term) ||
-                m.telefone.includes(term)
+                m.telefone.includes(term) ||
+                (m.instituicao || '').toLowerCase().includes(term)
             )
             : [...medicos]
-
         return filtered.sort((a, b) => {
             const valA = a[sortMedicosField] || ''
             const valB = b[sortMedicosField] || ''
@@ -233,7 +245,6 @@ export function PaginaAdministrador() {
         })
     }, [medicos, searchMedicos, sortMedicosField, sortMedicosOrder])
 
-    // Pacientes view: filtered + sorted (includes data_nascimento search)
     const sortedPacientes = useMemo(() => {
         const term = searchPacientes.toLowerCase()
         const filtered = term
@@ -249,11 +260,9 @@ export function PaginaAdministrador() {
                 p.data_nascimento.split('-').reverse().join('/').includes(term)
             )
             : [...pacientes]
-
         return filtered.sort((a, b) => {
             let valA: string | number
             let valB: string | number
-
             if (sortPacientesField === 'idade') {
                 valA = calcularIdade(a.data_nascimento)
                 valB = calcularIdade(b.data_nascimento)
@@ -267,22 +276,33 @@ export function PaginaAdministrador() {
                 valA = a.nome
                 valB = b.nome
             }
-
             if (valA < valB) return sortPacientesOrder === 'asc' ? -1 : 1
             if (valA > valB) return sortPacientesOrder === 'asc' ? 1 : -1
             return 0
         })
     }, [pacientes, searchPacientes, sortPacientesField, sortPacientesOrder])
 
-    // ── Data fetching ────────────────────────────────────────────────────────
+    const filteredInstituicoes = useMemo(() => {
+        const term = searchInstituicoes.toLowerCase()
+        if (!term) return instituicoes
+        return instituicoes.filter(i =>
+            i.nome_fantasia.toLowerCase().includes(term) ||
+            (i.nome || '').toLowerCase().includes(term) ||
+            i.cnpj.includes(term) ||
+            i.cidade.toLowerCase().includes(term) ||
+            i.estado.toLowerCase().includes(term)
+        )
+    }, [instituicoes, searchInstituicoes])
+
     const fetchData = async () => {
         setLoading(true)
         try {
-            const [resMedicos, resPacientes, resRelatorios, resCheck] = await Promise.all([
+            const [resMedicos, resPacientes, resRelatorios, resCheck, resInstituicoes] = await Promise.all([
                 fetch('/api/medicos'),
                 fetch('/api/pacientes'),
                 fetch('/api/relatorios'),
                 fetch('/api/check'),
+                fetch('/api/instituicao'),
             ])
 
             if (resCheck.ok) {
@@ -299,9 +319,11 @@ export function PaginaAdministrador() {
             const dataMedicos = await resMedicos.json()
             const dataPacientes = await resPacientes.json()
             const dataRelatorios = await resRelatorios.json()
+            const dataInstituicoes = await resInstituicoes.json()
 
             setMedicos(dataMedicos || [])
             setPacientes(dataPacientes || [])
+            setInstituicoes(dataInstituicoes || [])
             setRelatorios(dataRelatorios.relatorios || [])
             setStats({
                 totalMedicos: dataMedicos.length || 0,
@@ -342,7 +364,7 @@ export function PaginaAdministrador() {
             {/* ── Sidebar ── */}
             <aside className='admin-sidebar'>
                 <div className='sidebar-logo'>
-                    <h3>SXF Admin</h3>
+                    <img src={logoImg} alt="SXF Admin" />
                 </div>
                 <nav className='sidebar-nav'>
                     <button
@@ -365,6 +387,15 @@ export function PaginaAdministrador() {
                     >
                         <img src={pacienteImg} alt="" />
                         Pacientes
+                    </button>
+                    <button
+                        className={`sidebar-item ${visao === 'instituicoes' ? 'sidebar-item-ativo' : ''}`}
+                        onClick={() => setVisao('instituicoes')}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 26, height: 26, opacity: 0.7 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                        </svg>
+                        Instituições
                     </button>
                 </nav>
             </aside>
@@ -418,6 +449,7 @@ export function PaginaAdministrador() {
                                             <th>Triagens Realizadas</th>
                                             <th>Pacientes Atendidos</th>
                                             <th>Status</th>
+                                            <th>Instituição</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -432,6 +464,7 @@ export function PaginaAdministrador() {
                                                         {a.ativo ? 'Ativo' : 'Inativo'}
                                                     </span>
                                                 </td>
+                                                <td>{a.instituicao}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -471,9 +504,14 @@ export function PaginaAdministrador() {
                         <div className='admin-secao'>
                             <div className='admin-filtros-header'>
                                 <h2>Filtros:</h2>
-                                <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
-                                    + Inserir usuário
-                                </button>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir btn-inserir-secundario'>
+                                        + Instituição
+                                    </button>
+                                    <button onClick={() => setModalCadastrarAberto(true)} className='btn-inserir'>
+                                        + Inserir usuário
+                                    </button>
+                                </div>
                             </div>
 
                             <SortChips
@@ -491,6 +529,7 @@ export function PaginaAdministrador() {
                                             <th>Nome</th>
                                             <th>Tipo</th>
                                             <th>CRM (se médico)</th>
+                                            <th>Instituição</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -501,6 +540,7 @@ export function PaginaAdministrador() {
                                                 <td>{m.nome}</td>
                                                 <td>{m.tipo}</td>
                                                 <td>{m.crm || '-'}</td>
+                                                <td>{m.instituicao || '-'}</td>
                                                 <td>
                                                     <label className='admin-switch'>
                                                         <input
@@ -513,10 +553,7 @@ export function PaginaAdministrador() {
                                                 </td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button
-                                                            className='btn-acao'
-                                                            onClick={() => setMedicoParaEditar(m)}
-                                                        >
+                                                        <button className='btn-acao' onClick={() => setMedicoParaEditar(m)}>
                                                             <img src={pincelImg} alt="Editar" />
                                                         </button>
                                                     </div>
@@ -566,22 +603,60 @@ export function PaginaAdministrador() {
                                                 <td>{formatarCPF(p.cpf)}</td>
                                                 <td>
                                                     <div className='acoes-celula'>
-                                                        <button
-                                                            className='btn-acao'
-                                                            onClick={() => setPacienteParaEditar(p)}
-                                                            title="Editar paciente"
-                                                        >
+                                                        <button className='btn-acao' onClick={() => setPacienteParaEditar(p)} title="Editar paciente">
                                                             <img src={pincelImg} alt="Editar" />
                                                         </button>
-                                                        <button
-                                                            className='btn-acao btn-acao-fotos'
-                                                            onClick={() => setPacienteFotosVisualizar(p)}
-                                                            title="Ver fotos"
-                                                        >
+                                                        <button className='btn-acao btn-acao-fotos' onClick={() => setPacienteFotosVisualizar(p)} title="Ver fotos">
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                                                             </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Instituições view ── */}
+                    {visao === 'instituicoes' && (
+                        <div className='admin-secao'>
+                            <div className='admin-filtros-header'>
+                                <h2>Instituições:</h2>
+                                <button onClick={() => setModalInstituicaoAberto(true)} className='btn-inserir'>
+                                    + Instituição
+                                </button>
+                            </div>
+
+                            <div className='admin-tabela-container'>
+                                <h3>Lista de instituições:</h3>
+                                <table className='admin-tabela'>
+                                    <thead>
+                                        <tr>
+                                            <th>Nome Fantasia</th>
+                                            <th>Razão Social</th>
+                                            <th>CNPJ</th>
+                                            <th>Cidade / UF</th>
+                                            <th>Endereço</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredInstituicoes.map((inst, i) => (
+                                            <tr key={i}>
+                                                <td>{inst.nome_fantasia}</td>
+                                                <td>{inst.nome || '-'}</td>
+                                                <td>{inst.cnpj}</td>
+                                                <td>{inst.cidade} / {inst.estado}</td>
+                                                <td>{inst.rua}, {inst.numero}{inst.complemento ? `, ${inst.complemento}` : ''} — {inst.bairro}</td>
+                                                <td>
+                                                    <div className='acoes-celula'>
+                                                        <button className='btn-acao' onClick={() => setInstituicaoParaEditar(inst)} title="Editar instituição">
+                                                            <img src={pincelImg} alt="Editar" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -605,6 +680,14 @@ export function PaginaAdministrador() {
                     }}
                 />
             )}
+            {modalInstituicaoAberto && (
+                <ModalCadastrarInstituicao
+                    onFechar={() => {
+                        setModalInstituicaoAberto(false)
+                        fetchData()
+                    }}
+                />
+            )}
             {medicoParaEditar && (
                 <ModalEditarUsuario
                     usuario={medicoParaEditar}
@@ -623,6 +706,13 @@ export function PaginaAdministrador() {
                 <ModalFotosPaciente
                     paciente={pacienteFotosVisualizar}
                     onFechar={() => setPacienteFotosVisualizar(null)}
+                />
+            )}
+            {instituicaoParaEditar && (
+                <ModalEditarInstituicao
+                    instituicao={instituicaoParaEditar}
+                    onFechar={() => setInstituicaoParaEditar(null)}
+                    onSucesso={fetchData}
                 />
             )}
         </div>
