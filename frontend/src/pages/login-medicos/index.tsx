@@ -1,4 +1,4 @@
-import { LoginMedico } from '../../componentes/login-medico'
+import { LoginMedico } from '../../components/login-medico'
 import medicoImg from '../../assets/medico.png'
 import './index.css'
 
