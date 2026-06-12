@@ -112,7 +112,6 @@ CREATE TABLE resultado(
     atingiu_limiar BOOLEAN NOT NULL,
     justificativa VARCHAR(255),
     gerado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
     FOREIGN KEY (id_triagem) REFERENCES triagem(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
