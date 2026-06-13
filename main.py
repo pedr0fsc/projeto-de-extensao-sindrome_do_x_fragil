@@ -16,7 +16,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY", "sxf-default-secret-key"),
     session_cookie="sxf_session",
-    max_age=43200  # 12 horas
+    max_age=None
 )
 
 # ── Routes ────────────────────────────────────────────────────────────────────
