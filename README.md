@@ -23,7 +23,30 @@ Este projeto desenvolve uma plataforma web para **triagem clínica**. Através d
 
 ---
 
+## 📂 Estrutura do Repositório
+
+```text
+projeto-de-extensao-sindrome_do_x_fragil/
+├── backend/                        # Package python com todos os arquivos de backend
+├── db/sindrome-do-x-fragil.sql     # Arquivo de estruturação do Database SQL
+├── documentation/                  # Relatórios do projeto e links dos vídeos informacionais
+├── frontend/                       # Interface React (Vite)
+├── .env                            # Variáveis de ambiente (Senhas/URLs)
+├── .env.example                    # Template das variáveis de ambiente para subir no repositório
+├── .gitignore                      # Regras de exclusão do Git (Centralizado)
+├── docker-compose.yml              # Orquestração do MySQL via Docker
+├── Dockerfile                      # Build dos conteineres Docker (1. React e 2. Python e db)
+├── LICENSE                         # Arquivo da licença MIT sob o projeto
+├── main.py                         # Arquivo .py de backend
+├── README.md                       # Documentação oficial
+└── requirements.txt                # Lista de dependências python para instalação
+```
+
+---
+
 ## 🚀 Guia de Instalação e Execução
+
+Acesse nosso [Guia de instalação](https://youtu.be/48tgVu_uaJQ) e o nosso [Guia do usuário](https://youtu.be/WrB756tM2dw) para mais informações.
 
 ### 🐳 Para Usuários (Instalação via Docker)
 Ideal para rodar a aplicação pronta de forma simples e padronizada.
@@ -87,24 +110,7 @@ copy .env.example .env
 
 ---
 
-## 📂 Estrutura do Repositório
-
-```text
-projeto-de-extensao-sindrome_do_x_fragil/
-├── db/sindrome-do-x-fragil.sql     # Arquivo de estruturação do Database SQL
-├── frontend/                       # Interface React (Vite)
-├── docker-compose.yml              # Orquestração do MySQL via Docker
-├── Dockerfile                      # Build dos conteineres Docker (1. React e 2. Python e db)
-├── main.py                         # Arquivo .py de backend
-├── .env                            # Variáveis de ambiente (Senhas/URLs)
-├── .env.example                    # Template das variáveis de ambiente para devs
-├── .gitignore                      # Regras de exclusão do Git (Centralizado)
-└── README.md                       # Documentação oficial
-```
-
----
-
-## 2. Fluxo de Desenvolvimento (Git Flow)
+#### 4. Fluxo de Desenvolvimento (Git Flow)
 
 Crie uma Branch: Nunca trabalhe diretamente na main. Use nomes descritivos:
 
@@ -138,10 +144,16 @@ Abra um PR no GitHub. Outro desenvolvedor deve revisar seu código antes do Merg
 ## 🐳 Como Buildar e Rodar (Docker)
 
 ### Modo de Desenvolvimento (Local)
-Para rodar tudo com um único comando usando Docker:
+Para construir os contêineres e as imagens pela primeira vez:
 
 ```
 docker-compose up --build
+```
+
+Para apenas ligar o sistema e deixa-lo rodando em segundo plano:
+
+```
+docker-compose up -d
 ```
 
 ### Frontend/Backend: 
@@ -162,7 +174,7 @@ Ao hospedar em plataformas como Railway ou Render:
 
 ## 🔍 Detalhes dos Componentes e Conexões
 
-**Dockerfile (Multi-Stage)**: Otimiza o servidor. No estágio 1, o Node.js compila o React para arquivos estáticos (dist). No estágio 2, o Python assume e serve esses arquivos, eliminando a necessidade de rodar o Node em produção.
+**Dockerfile (Multi-Stage)**: Otimiza o servidor. No estágio 1, o Vite compila o React para arquivos estáticos (dist). No estágio 2, o Python assume e serve esses arquivos, eliminando a necessidade de rodar o Vite em produção.
 
 **main.py**: Atua como a "ponte". Ele utiliza bibliotecas como FastAPI para servir a interface React e expor endpoints de API que consultam o MySQL.
 
