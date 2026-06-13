@@ -19,7 +19,7 @@ def gerar_pdf_relatorio(nome, data_nasc, sexo, score, recomendacao, medico, limi
     pdf = canvas.Canvas(buffer, pagesize=A4)
     
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.setFillColorRGB(0.17, 0.41, 0.46) # Cor padrão #2C6975
+    pdf.setFillColorRGB(0.17, 0.41, 0.46)
     pdf.drawString(180, 800, "Relatório de Triagem - Síndrome do X Frágil")
     
     
@@ -83,7 +83,7 @@ def gerar_pdf_relatorio(nome, data_nasc, sexo, score, recomendacao, medico, limi
     pdf.line(50, 50, 550, 50)
     pdf.setFont("Helvetica", 9)
     pdf.setFillColorRGB(0.5, 0.5, 0.5)
-    pdf.drawString(50, 38, "Este documento é um relatório gerado de forma sistêmica com base nos critérios clínicos estabelecidos.")
+    pdf.drawString(50, 38, "Este documento é um relatório gerado com base em critérios clínicos estabelecidos.")
     pdf.drawString(450, 38, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
     
     pdf.save()
