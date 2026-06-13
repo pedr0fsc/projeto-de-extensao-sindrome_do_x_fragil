@@ -14,31 +14,117 @@ from io import BytesIO
 
 router = APIRouter()
 
-def gerar_pdf_relatorio(nome, data_nasc, sexo, score, recomendacao, medico, obs, limiar) -> BytesIO:
+def gerar_pdf_relatorio(nome, data_nasc, sexo, score, recomendacao, medico, limiar, cpf, data_triagem, instituicao, responsavel, grau_resp) -> BytesIO:
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
+    
     pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(200, 800, "Relatório Triagem - SXF")
-    pdf.setFont("Helvetica", 12)
-    pdf.drawString(50, 750, f"Paciente: {nome}")
-    pdf.drawString(50, 730, f"Nascimento: {data_nasc}")
-    pdf.drawString(50, 710, f"Sexo: {sexo}")
-    pdf.drawString(50, 690, f"Médico: {medico}")
-    pdf.drawString(50, 670, f"Data: {datetime.now().strftime('%d/%m/%Y')}")
-    pdf.line(50, 650, 550, 650)
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(50, 620, f"Score: {score:.3f} (Limiar: {limiar})")
-    if "ENCAMINHAR" in recomendacao:
-        pdf.setFillColorRGB(1, 0, 0)
+    pdf.setFillColorRGB(0.17, 0.41, 0.46) # Cor padrão #2C6975
+    pdf.drawString(180, 800, "Relatório de Triagem - Síndrome do X Frágil")
+    
+    
+    pdf.setStrokeColorRGB(0.17, 0.41, 0.46)
+    pdf.setLineWidth(1)
+    pdf.line(50, 785, 550, 785)
+    
+    
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.setFillColorRGB(0, 0, 0)
+    pdf.drawString(50, 760, "Dados do Paciente")
+    
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(50, 740, f"Nome: {nome}")
+    pdf.drawString(50, 720, f"CPF: {cpf}")
+    pdf.drawString(50, 700, f"Data de Nascimento: {data_nasc}")
+    pdf.drawString(50, 680, f"Sexo: {sexo}")
+    
+    
+    if responsavel and responsavel != "Não informado":
+        pdf.drawString(50, 660, f"Responsável: {responsavel} ({grau_resp})")
+        y_linha = 640
+    else:
+        y_linha = 660
+
+    
+    pdf.setStrokeColorRGB(0.8, 0.8, 0.8)
+    pdf.line(50, y_linha, 550, y_linha)
+    
+    
+    y_clinica = y_linha - 20
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(50, y_clinica, "Dados da Avaliação")
+    
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(50, y_clinica - 20, f"Médico Responsável: {medico}")
+    pdf.drawString(50, y_clinica - 40, f"Instituição: {instituicao or 'Não informada'}")
+    pdf.drawString(50, y_clinica - 60, f"Data da Triagem: {data_triagem}")
+    
+    
+    pdf.line(50, y_clinica - 80, 550, y_clinica - 80)
+    
+    
+    y_resultado = y_clinica - 100
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(50, y_resultado, "Conclusão Diagnóstica")
+    
+    pdf.setFont("Helvetica-Bold", 13)
+    pdf.drawString(50, y_resultado - 25, f"Score Obtido: {score:.3f}  (Limiar Clínico: {limiar})")
+    
+    
+    if "ENCAMINHAR" in recomendacao.upper():
+        pdf.setFillColorRGB(0.8, 0, 0)
     else:
         pdf.setFillColorRGB(0, 0.5, 0)
-    pdf.drawString(50, 590, recomendacao)
-    pdf.setFillColorRGB(0, 0, 0)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(50, 560, f"Observações: {obs or 'Nenhuma'}")
+        
+    pdf.drawString(50, y_resultado - 50, f"Diretriz Clínica: {recomendacao}")
+    
+    
+    pdf.setStrokeColorRGB(0.17, 0.41, 0.46)
+    pdf.line(50, 50, 550, 50)
+    pdf.setFont("Helvetica", 9)
+    pdf.setFillColorRGB(0.5, 0.5, 0.5)
+    pdf.drawString(50, 38, "Este documento é um relatório gerado de forma sistêmica com base nos critérios clínicos estabelecidos.")
+    pdf.drawString(450, 38, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    
     pdf.save()
     buffer.seek(0)
     return buffer
+
+
+@router.get("/api/triagem/imprimir/{triagem_id}")
+async def api_imprimir(triagem_id: int, db: Session = Depends(get_db)):
+    res_obj = db.query(Resultado).filter(Resultado.id_triagem == triagem_id).first()
+    t = db.query(Triagem).filter(Triagem.id == triagem_id).first()
+    
+    if not t or not res_obj:
+        raise HTTPException(status_code=404, detail="Triagem ou resultado não encontrado.")
+    
+    
+    pdf = gerar_pdf_relatorio(
+        nome=t.paciente.nome,
+        data_nasc=t.paciente.data_nascimento.strftime("%d/%m/%Y"),
+        sexo=t.paciente.sexo,
+        score=float(res_obj.score_total),
+        recomendacao=res_obj.justificativa,
+        medico=t.medico.usuario.nome,
+        limiar=float(res_obj.limiar),
+        cpf=t.paciente.cpf,
+        data_triagem=t.realizada_em.strftime("%d/%m/%Y %H:%M"),
+        instituicao=t.paciente.instituicao.nome_fantasia if t.paciente.instituicao else None,
+        responsavel=t.nome_responsavel,
+        grau_resp=t.grau_responsavel
+    )
+    
+    return StreamingResponse(
+        pdf, 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"inline; filename=relatorio_{t.paciente.nome.replace(' ', '_')}.pdf"}
+    )
+
+
+@router.get("/api/historico/imprimir/{triagem_id}")
+async def api_imprimir_historico(triagem_id: int, db: Session = Depends(get_db)):
+    return await api_imprimir(triagem_id, db)
 
 @router.post("/api/login")
 async def api_login(request: Request, db: Session = Depends(get_db)):
@@ -276,12 +362,7 @@ async def api_triagem(request: Request, db: Session = Depends(get_db)):
     enviar_email(paciente.email, paciente.nome, score, rec, limiar)
     return {"score": score, "limiar": limiar, "atingiu_limiar": atingiu, "recomendacao": rec, "triagem_id": triagem.id}
 
-@router.get("/api/triagem/imprimir/{triagem_id}")
-async def api_imprimir(triagem_id: int, db: Session = Depends(get_db)):
-    res_obj = db.query(Resultado).filter(Resultado.id_triagem == triagem_id).first()
-    t = db.query(Triagem).filter(Triagem.id == triagem_id).first()
-    pdf = gerar_pdf_relatorio(t.paciente.nome, t.paciente.data_nascimento.strftime("%d/%m/%Y"), t.paciente.sexo, float(res_obj.score_total), res_obj.justificativa, t.medico.usuario.nome, t.observacoes, float(res_obj.limiar))
-    return StreamingResponse(pdf, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=relatorio_{t.paciente.nome.replace(' ', '_')}.pdf"})
+
 
 @router.put("/api/triagem/{triagem_id}")
 async def api_editar_triagem(triagem_id: int, request: Request, db: Session = Depends(get_db)):
